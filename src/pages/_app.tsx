@@ -15,7 +15,7 @@ const customTheme = {
     styles: {
         global: {
             'html, body': {
-                'background-color': colors.brand.darkPrimary
+                backgroundColor: colors.brand.darkPrimary
             },
             '*': {
                 boxSizing: 'border-box',
