@@ -1,0 +1,3 @@
+**/build/*
+services/client/.next/*
+.next/*
