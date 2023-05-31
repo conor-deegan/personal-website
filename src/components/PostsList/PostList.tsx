@@ -1,7 +1,7 @@
 import { HStack, Text, useColorModeValue, VStack } from '@chakra-ui/react';
 import Link from 'next/link';
 
-import { IPostData } from '../../types';
+import { IPostData } from './../../types';
 
 export const PostList = ({ posts }: { posts: IPostData[] }) => {
     const link = useColorModeValue('#0000EE', '#69b9ff');

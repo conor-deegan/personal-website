@@ -84,7 +84,7 @@ export const getStaticProps = async () => {
     const config = await import('./../config/config.json');
 
     // get all posts
-    const webpackContext = require.context('./../posts', true, /\.md$/);
+    const webpackContext = require.context('./../../posts', true, /\.md$/);
     const keys = webpackContext.keys();
     const cleanPathKeys = keys.map(
         (key) => `./${key.split('/')[key.split('/').length - 1]}`

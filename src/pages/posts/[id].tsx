@@ -156,12 +156,12 @@ export default Post;
 
 export const getStaticProps = async (context: {
     params: {
-        post: string;
+        id: string;
     };
 }) => {
-    const { post } = context.params;
-    const config = await import('./../../config/config.json');
-    const content = await import(`../../posts/${post}.md`);
+    const { id } = context.params;
+    const config = await import('../../config/config.json');
+    const content = await import(`../../../posts/${id}.md`);
     const data = matter(content.default);
     return {
         props: {
@@ -177,7 +177,7 @@ export const getStaticProps = async (context: {
 };
 
 export const getStaticPaths = async () => {
-    const blogs = glob.sync('./../../posts/**/*.md');
+    const blogs = glob.sync('./../../../posts/**/*.md');
     const blogSlugs = blogs.map((file) =>
         file.split('/')[1].replace(/ /g, '-').slice(0, -3).trim()
     );
