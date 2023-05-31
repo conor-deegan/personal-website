@@ -14,7 +14,6 @@ import {
 } from '@chakra-ui/react';
 import { readdirSync } from 'fs';
 import matter from 'gray-matter';
-import Image from 'next/image';
 import Link from 'next/link';
 import path from 'path';
 import ReactMarkdown from 'react-markdown';
