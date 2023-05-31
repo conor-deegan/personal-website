@@ -109,11 +109,9 @@ const Post = (props: {
                     img: (props) => {
                         return (
                             <VStack as={'span'} mt={6} mb={6}>
-                                <Image
+                                <img
                                     src={props.src as string}
                                     alt={props.alt as string}
-                                    width="0"
-                                    height="0"
                                     sizes="100vw"
                                     style={{ width: '50%', height: 'auto' }}
                                 />
