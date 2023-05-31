@@ -12,10 +12,11 @@ import {
     useColorModeValue,
     VStack
 } from '@chakra-ui/react';
-import glob from 'glob';
+import { readdirSync } from 'fs';
 import matter from 'gray-matter';
 import Image from 'next/image';
 import Link from 'next/link';
+import path from 'path';
 import ReactMarkdown from 'react-markdown';
 import { HeadingProps } from 'react-markdown/lib/ast-to-react';
 import rehypeKatex from 'rehype-katex';
@@ -177,16 +178,8 @@ export const getStaticProps = async (context: {
 };
 
 export const getStaticPaths = async () => {
-    const blogs = glob.sync('./../../../posts/**/*.md');
-    const blogSlugs = blogs.map((file) =>
-        file.split('/')[1].replace(/ /g, '-').slice(0, -3).trim()
-    );
-    const paths = blogSlugs.map((slug) => {
-        return {
-            params: {
-                slug
-            }
-        };
-    });
+    const postsDirectory = path.join(__dirname, '../../../../posts');
+    const posts = readdirSync(path.join(postsDirectory), 'utf-8');
+    const paths = posts.map((slug) => `/posts/${slug.replace('.md', '')}`);
     return { paths, fallback: false };
 };

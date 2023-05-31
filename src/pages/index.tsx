@@ -92,7 +92,7 @@ export const getStaticProps = async () => {
     const dedupedKeys = [...new Set(cleanPathKeys)];
     const values = dedupedKeys.map(webpackContext);
     const posts = dedupedKeys.map((key, index) => {
-        const slug = key
+        const id = key
             .replace(/^.*[\\/]/, '')
             .split('.')
             .slice(0, -1)
@@ -102,7 +102,7 @@ export const getStaticProps = async () => {
         const document = matter(value.default);
         return {
             data: document.data,
-            id: slug
+            id
         };
     });
 
