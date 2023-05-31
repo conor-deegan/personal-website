@@ -3,9 +3,6 @@ title: "Feistel Network in Python"
 author: "Conor Deegan"
 date: "04-22"
 postNum: 3
-twitterPostTitle: "Feistel Network in Python - Conor Deegan"
-twitterPostDescription: "Discussion and implementation of a Feistel Network in Python"
-twitterPostImage: "https://conordeegan.dev/feistel-network-og-image.png"
 categories: ['cryptography']
 ---
 
@@ -21,7 +18,7 @@ This article explains how a Feistel network works and implements one using Pytho
 
 At its core, a Feistel network uses a round function to encrypt and decrypt data. The image below illustrates a single round of a Feistel network.
 
-![Feistel-Network-Single-Round](https://conordeegan.dev/feistel-network-single-round.png "Single round of a Feistel Network [4]")
+![Feistel-Network-Single-Round](/post/feistel-network-single-round.png "Single round of a Feistel Network [4]")
 
 We can now step through the process of encryption using a Feistel Network. Let $F$ be the round function, $I_0$ be the first block of plaintext data, and $K_0, K_1,...,K_n$ be the sub-keys of $K$ for the rounds $0, 1,...,n$ respectively.
 
@@ -49,7 +46,7 @@ The function $F$ is what differentiates block ciphers that are based on a Feiste
 
 As can be seen, both the encryption and decryption operations are very similar, requiring only that the order of the sub-keys used is reversed. This is shown clearly in the diagram below.
 
-![Feistel-Network](https://conordeegan.dev/feistel-network.png "A Feistel Network with N rounds [3]")
+![Feistel-Network](/post/feistel-network.png "A Feistel Network with N rounds [3]")
 
 ### Python implementation
 
@@ -100,7 +97,7 @@ Once all ciphertext blocks have been computed, the function returns the entire c
 return bits_to_hex(''.join(ciphertext_blocks))
 ```
 
-### The round function
+### The round function:
 
 The round function $F$ for this Feistel network simply XORs the sub-key with the right hand of the plaintext bits provided. The result of this is then XORed with the left hand bits. The halves are then swapped and returned.
 

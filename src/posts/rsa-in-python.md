@@ -3,9 +3,6 @@ title: "RSA"
 author: "Conor Deegan"
 date: "06-22"
 postNum: 6
-twitterPostTitle: "The Mathematics and Implementation of RSA - Conor Deegan"
-twitterPostDescription: "Discussion and implementation of RSA in Python"
-twitterPostImage: "https://conordeegan.dev/rsa-og-image.png"
 categories: ['cryptography']
 ---
 
@@ -59,7 +56,7 @@ Once $\Phi(n)$ is computed, a public key $e$ should be chosen such that $e$ and 
 
 The private key $d$ is calculated such that $e.d \equiv 1 \mod \Phi(n)$. This is done by using the [Extended Euclidean algorithm](https://en.wikipedia.org/wiki/Extended_Euclidean_algorithm).
 
-The Extended Euclidean algorithm calculates $x$ and $y$ such that $ax + by = gcd(a,b)$. A simple online calculator can be found [here](https://www.extendedeuclideanalgorithm.com/calculator.php).
+The Extended Euclidean algorithm calculates $x$ and $y$ such that $ax + by = gcd(a,b)$. A simple online calculator can be found [here](https://www.extendedeuclideanalgorithm.com/calculator).
 
 We can now look at why this works. If we let $a = e$ and $b = \Phi(n)$ we can rewrite the above as:
 

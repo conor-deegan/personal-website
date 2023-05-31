@@ -3,9 +3,6 @@ title: "Cryptographic Hash Functions"
 author: "Conor Deegan"
 date: "03-22"
 postNum: 1
-twitterPostTitle: "Cryptographic Hash Functions - Conor Deegan"
-twitterPostDescription: "An introduction to Cryptographic Hash Functions for use in Web3"
-twitterPostImage: "https://conordeegan.dev/cryptographic-hash-function-share-image.png"
 categories: ['cryptography', 'ethereum']
 ---
 
@@ -59,7 +56,7 @@ However, given a hash function can take data of any size and produces a fixed si
 
 An attack on a cryptographic hash function which tries to find two messages that result in the same hash is known as a second-preimage attack. In terms of our use case, if a cryptographic hash function was susceptible to a second-preimage attack it would mean that Eve could potentially find an entirely different password than the users password but would be granted access as both passwords result in the same hash.
 
-The [birthday paradox](https://en.wikipedia.org/wiki/Birthday_paradox) places an upper bound on collision resistance of an `n-bit` hash as `root 2^n`, meaning that any method that makes it easier than this to find a collision deems that hash function as insecure. Some hash functions that were once thought to be collision resistant have now been broken. See [MD5](https://web.archive.org/web/20090521024709/http://merlot.usc.edu/csac-f06/papers/Wang05a.pdf) and [SHA-1](https://people.csail.mit.edu/yiqun/SHA1AttackProceedingVersion.pdf).
+The [birthday paradox](https://en.wikipedia.org/wiki/Birthday_paradox) places an upper bound on collision resistance of an `n-bit` hash as `root 2^n`, meaning that any method that makes it easier than this to find a collision deems that hash function as insecure. Some hash functions that were once thought to be collision resistant have now been broken. See [MD5](https://web.archive.org/web/20090521024709/merlot.usc.edu/csac-f06/papers/Wang05a.pdf) and [SHA-1](https://people.csail.mit.edu/yiqun/SHA1AttackProceedingVersion.pdf).
 
 ### Avalanche Effect
 

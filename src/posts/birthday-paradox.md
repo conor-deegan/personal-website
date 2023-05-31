@@ -3,9 +3,6 @@ title: "The Birthday Paradox"
 author: "Conor Deegan"
 date: "05-22"
 postNum: 4
-twitterPostTitle: "The Birthday Paradox - Conor Deegan"
-twitterPostDescription: "Discussion and demonstration of the Birthday Paradox"
-twitterPostImage: "https://conordeegan.dev/birthday-paradox-og-image.png"
 categories: ['cryptography']
 ---
 
@@ -17,11 +14,11 @@ It seems odd that only 23 people are needed in order to have a 50% chance of a s
 
 ### Implications on cryptography
 
-A [birthday attack](https://en.wikipedia.org/wiki/Birthday_attack) is a [cryptographic attack](https://en.wikipedia.org/wiki/Cryptanalysis) that exploits this paradox. Given the paradox, it is possible to find a [collision](https://en.wikipedia.org/wiki/Hash_collision) in a [hash function](https://conordeegan.dev/post/cryptographic-hash-functions) in $\approx \sqrt{2^d}$ or $\approx 2^{d/2}$ operations where $d$ is the length of the hash in bits - I will prove this shortly and also give a more exact equation. Some research indicates that quantum computers may perform birthday attacks, i.e find collisions, in $\approx \sqrt[3]{2^d}$ or $\approx 2^{d/3}$ operations [1].
+A [birthday attack](https://en.wikipedia.org/wiki/Birthday_attack) is a [cryptographic attack](https://en.wikipedia.org/wiki/Cryptanalysis) that exploits this paradox. Given the paradox, it is possible to find a [collision](https://en.wikipedia.org/wiki/Hash_collision) in a [hash function](/post/cryptographic-hash-functions) in $\approx \sqrt{2^d}$ or $\approx 2^{d/2}$ operations where $d$ is the length of the hash in bits - I will prove this shortly and also give a more exact equation. Some research indicates that quantum computers may perform birthday attacks, i.e find collisions, in $\approx \sqrt[3]{2^d}$ or $\approx 2^{d/3}$ operations [1].
 
 A 128-bit hash would take $2^{128} \approx 3.40×10^{38}$ operations to brute force. It’s hard to grasp how massive this number is and its safe to say that brute forcing a 128-bit hash is still out of reach of modern computers. However, finding a hash collision in a 128-bit hash requires $2^{128/2} = 2^{64} \approx 1.84×10^{19}$ operations. A number quickly becoming within the reach of some modern computers.
 
-I talk more about the problems of hash collisions [here](https://conordeegan.dev/post/cryptographic-hash-functions).
+I talk more about the problems of hash collisions [here](/post/cryptographic-hash-functions).
 
 ### Proof
 
@@ -111,7 +108,7 @@ The program runs 1,000 times for each value of $n$ in order to check if there is
 
 $\gamma \approx 1 - e^{- \frac{n^2}{2 \times 2^{16}}}$
 
-![Birthday-Paradox-Plot](https://conordeegan.dev/birthday-paradox-plot.png "Plot of Results")
+![Birthday-Paradox-Plot](/post/birthday-paradox-plot.png "Plot of Results")
 
 From the above we can see that the empirical results match almost perfectly with the derived equation. Only 256 hashes are required in order to have a 50% chance of at least once collision in a 16-bit hash, which can take $2^{16}$ = 65,536 possible values.
 

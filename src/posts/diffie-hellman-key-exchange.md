@@ -3,9 +3,6 @@ title: "Diffie–Hellman key exchange"
 author: "Conor Deegan"
 date: "03-23"
 postNum: 5
-twitterPostTitle: "The Mathematics and Implementation of Diffie–Hellman key exchange - Conor Deegan"
-twitterPostDescription: "Discussion and implementation of Diffie–Hellman key exchange in Python"
-twitterPostImage: "https://conordeegan.dev/diffie-hellman-og-image.png"
 categories: ['cryptography']
 ---
 
@@ -137,7 +134,7 @@ As mentioned, Diffie-Hellman is susceptible to man-in-the-middle-attacks as ther
 
 This attack is relatively straightforward:
 
-![Man-In-The-Middle](https://conordeegan.dev/man-in-the-middle.png "A Man in the Middle Attack")
+![Man-In-The-Middle](/post/man-in-the-middle.png "A Man in the Middle Attack")
 
 Mallet sits in between Alice and Bobs communication. He is then able to create a shared secret with Alice and a different shared secret with Bob. Neither Alice nor Bob are aware that they are not dealing directly with the other party. Once Mallet has the two shared secrets he can simply decrypt incoming messages from Alice using his shared secret with Alice, read them, encrypt them with his shared secret with Bob and forward them on. Mallet can now also alter the message sent.
 

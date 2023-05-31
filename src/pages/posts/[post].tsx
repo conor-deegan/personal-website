@@ -1,54 +1,192 @@
-import { Box } from '@chakra-ui/react';
+import 'katex/dist/katex.min.css';
+
+import {
+    Box,
+    Code,
+    Flex,
+    Heading,
+    OrderedList,
+    Spacer,
+    Text,
+    UnorderedList,
+    useColorModeValue,
+    VStack
+} from '@chakra-ui/react';
+import glob from 'glob';
+import matter from 'gray-matter';
+import Image from 'next/image';
+import Link from 'next/link';
 import ReactMarkdown from 'react-markdown';
+import { HeadingProps } from 'react-markdown/lib/ast-to-react';
+import rehypeKatex from 'rehype-katex';
+import remarkMath from 'remark-math';
 
-import { getFiles, getPostBySlug } from '../../lib/post';
+import GenericPage from '../../layouts/GenericPage/GenericPage';
 
-export default function Post({
-    frontMatter,
-    markdownBody
-}: {
-    frontMatter: {
+const StyledHeading = (props: HeadingProps) => {
+    return (
+        <Heading mt={4} mb={4} fontFamily={'monospace'} fontSize={'16px'}>
+            {props.children}
+        </Heading>
+    );
+};
+
+const Post = (props: {
+    frontmatter: {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         [key: string]: any;
     };
     markdownBody: string;
-}) {
-    if (!frontMatter) return <></>;
-
+    title: string;
+    description: string;
+    twitterPostTitle: string;
+    twitterPostDescription: string;
+    twitterPostImage: string;
+}) => {
+    const link = useColorModeValue('#0000EE', '#69b9ff');
+    const text = useColorModeValue('brand.darkPrimary', 'brand.lightPrimary');
+    const border = useColorModeValue('brand.darkPrimary', 'brand.lightPrimary');
+    if (!props.frontmatter) {
+        return <></>;
+    }
     return (
-        <Box color={'brand.lightPrimary'}>
-            <ReactMarkdown children={markdownBody} />
-        </Box>
+        <GenericPage
+            title={`Conor Deegan | ${props.frontmatter.title}`}
+            description={props.description}
+            twitterPostTitle={props.twitterPostTitle}
+            twitterPostDescription={props.twitterPostDescription}
+            twitterPostImage={props.twitterPostImage}
+            showBack={true}
+        >
+            <Flex
+                borderBottom={'0.5px solid'}
+                borderBottomColor={border}
+                pb={4}
+            >
+                <Box fontWeight={'bold'} fontSize={'16px'}>
+                    {props.frontmatter.title}
+                </Box>
+                <Spacer />
+                <Box fontWeight={'bold'} fontSize={'16px'}>
+                    {props.frontmatter.date}
+                </Box>
+            </Flex>
+            <ReactMarkdown
+                children={props.markdownBody}
+                remarkPlugins={[remarkMath]}
+                rehypePlugins={[rehypeKatex]}
+                components={{
+                    code: (props) => {
+                        if (props.inline) {
+                            return (
+                                <Code ml={1} mr={1} pl={2} pr={2}>
+                                    {props.children}
+                                </Code>
+                            );
+                        }
+                        return (
+                            <Box mt={4} mb={4} ml={4} mr={4}>
+                                <Code p={4} width={'100%'} overflow={'scroll'}>
+                                    {props.children}
+                                </Code>
+                            </Box>
+                        );
+                    },
+                    h1: StyledHeading,
+                    h2: StyledHeading,
+                    h3: StyledHeading,
+                    h4: StyledHeading,
+                    h5: StyledHeading,
+                    h6: StyledHeading,
+                    p: (props) => {
+                        return (
+                            <Text lineHeight={2} ml={6}>
+                                {props.children}
+                            </Text>
+                        );
+                    },
+                    img: (props) => {
+                        return (
+                            <VStack as={'span'} mt={6} mb={6}>
+                                <Image
+                                    src={props.src as string}
+                                    alt={props.alt as string}
+                                    width="0"
+                                    height="0"
+                                    sizes="100vw"
+                                    style={{ width: '50%', height: 'auto' }}
+                                />
+                                <Text as={'span'}>{props.title}</Text>
+                            </VStack>
+                        );
+                    },
+                    a: (props) => {
+                        return (
+                            <Link href={props.href as string} target={'_blank'}>
+                                <span style={{ color: link }}>
+                                    {props.children}
+                                </span>
+                            </Link>
+                        );
+                    },
+                    ol: (props) => {
+                        return (
+                            <OrderedList ml={12} mt={4} mb={4}>
+                                {props.children}
+                            </OrderedList>
+                        );
+                    },
+                    ul: (props) => {
+                        return (
+                            <UnorderedList ml={12} mt={4} mb={4}>
+                                {props.children}
+                            </UnorderedList>
+                        );
+                    }
+                }}
+            />
+            <Box ml={[4, 12]} mt={4} color={text} textAlign={'center'}>
+                --- E.O.F ---
+            </Box>
+        </GenericPage>
     );
-}
+};
 
-export async function getStaticProps({
-    params
-}: {
-    params: { post: string };
-}): Promise<{
-    props: {
-        frontMatter: {
-            [key: string]: any;
-        };
-        markdownBody: string;
+export default Post;
+
+export const getStaticProps = async (context: {
+    params: {
+        post: string;
     };
-}> {
-    const { frontMatter, markdownBody } = await getPostBySlug(params.post);
-
+}) => {
+    const { post } = context.params;
+    const config = await import('./../../config/config.json');
+    const content = await import(`../../posts/${post}.md`);
+    const data = matter(content.default);
     return {
         props: {
-            frontMatter,
-            markdownBody
+            title: config.title,
+            description: config.description,
+            twitterPostTitle: config.twitterPostTitle,
+            twitterPostDescription: config.twitterPostDescription,
+            twitterPostImage: config.twitterPostImage,
+            frontmatter: data.data,
+            markdownBody: data.content
         }
     };
-}
+};
 
-export async function getStaticPaths() {
-    const posts = await getFiles();
-    const paths = posts.map((slug) => `/posts/${slug.replace('.md', '')}`);
-
-    return {
-        paths,
-        fallback: false
-    };
-}
+export const getStaticPaths = async () => {
+    const blogs = glob.sync('./../../posts/**/*.md');
+    const blogSlugs = blogs.map((file) =>
+        file.split('/')[1].replace(/ /g, '-').slice(0, -3).trim()
+    );
+    const paths = blogSlugs.map((slug) => {
+        return {
+            params: {
+                slug
+            }
+        };
+    });
+    return { paths, fallback: false };
+};

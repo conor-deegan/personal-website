@@ -3,9 +3,6 @@ title: "Elliptic Curve Cryptography"
 author: "Conor Deegan"
 date: "03-22"
 postNum: 2
-twitterPostTitle: "Elliptic Curve Cryptography - Conor Deegan"
-twitterPostDescription: "A practical introduction to Elliptic Curve Cryptography"
-twitterPostImage: "https://conordeegan.dev/elliptic-curve-cryptography-post-image.png"
 categories: ['cryptography', 'ethereum']
 ---
 
@@ -175,7 +172,7 @@ A typical elliptic curve takes the following form
 
 
 
-![Elliptic Curve](https://conordeegan.dev/elliptic-curve.png)
+![Elliptic Curve](/post/elliptic-curve.png)
 
 
 

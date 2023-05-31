@@ -1,11 +1,8 @@
 ---
-title: "Unicity Distance and the One-Time Pad"
+title: "Unicity Distance (OTP)"
 author: "Conor Deegan"
 date: "02-23"
 postNum: 7
-twitterPostTitle: "Unicity distance and the one-time pad - Conor Deegan"
-twitterPostDescription: "Discussion of unicity distance and implementation of the one-time pad cipher in Python."
-twitterPostImage: "https://conordeegan.dev/unicity-distance-og-image.png"
 categories: ['cryptography']
 ---
 
