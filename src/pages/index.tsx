@@ -35,10 +35,18 @@ const Index = (props: {
             </Heading>
             <Box maxW={'25rem'} w={'100%'}>
                 <Text ml={6}>
-                    Software Engineer. Currently CTO of London based startup
-                    Pooldata.io. The purpose of this site is to document stuff
-                    that I would normally keep in a private note/repo for
-                    reference.
+                    Software Engineer. Currently C.T.O of{' '}
+                    <Link
+                        href="https:pooldata.io"
+                        color={link}
+                        target={'_blank'}
+                    >
+                        Pooldata.io
+                    </Link>
+                    , previously C.T.O at Fuego and Head of Engineering at
+                    Recroot (Techstars 2020). The purpose of this site is to
+                    document stuff that I would normally keep in a private
+                    note/repo for reference.
                 </Text>
             </Box>
             <Heading mt={4} mb={4} fontSize={'16px'}>
