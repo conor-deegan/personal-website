@@ -4,11 +4,10 @@ import Link from 'next/link';
 import ToggleColorMode from '../ToggleColorMode/ToggleColorMode';
 
 const Header = ({ showBack }: { showBack: boolean }) => {
-    const link = useColorModeValue('#0000EE', '#69b9ff');
+    const link = useColorModeValue('brand.darkLink', 'brand.lightLink');
     const text = useColorModeValue('brand.darkPrimary', 'brand.lightPrimary');
     return (
         <Flex
-            fontFamily={'monospace'}
             fontWeight={'normal'}
             color={link}
             fontSize={'14px'}

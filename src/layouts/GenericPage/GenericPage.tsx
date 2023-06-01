@@ -21,7 +21,7 @@ const GenericPage = ({
     twitterPostImage: string;
     showBack: boolean;
 }) => {
-    const bg = useColorModeValue('brand.lightPrimary', 'brand.darkPrimary');
+    const bg = useColorModeValue('brand.lightPrimary', 'transparent');
     const text = useColorModeValue('brand.darkPrimary', 'brand.lightPrimary');
     return (
         <>
@@ -45,26 +45,33 @@ const GenericPage = ({
                 <meta name="twitter:image" content={twitterPostImage}></meta>
             </Head>
             <Flex
-                flexDirection={'column'}
-                w={'100%'}
-                h={'100%'}
-                minH={'100vh'}
-                bg={bg}
-                color={text}
-                textColor={text}
+                w={'100vw'}
+                backgroundAttachment={'fixed'}
+                bgGradient={
+                    'radial-gradient(at 10% 15%, rgba(8,6,34, 1), rgba(0, 0, 0, 1))'
+                }
             >
-                <Header showBack={showBack} />
-                <Box
-                    ml={[4, 12]}
-                    mr={[4, 0]}
-                    maxW={'40rem'}
-                    fontFamily={'monospace'}
-                    fontSize={'14px'}
+                <Flex
+                    flexDirection={'column'}
+                    w={'100%'}
+                    h={'100%'}
+                    minH={'100vh'}
+                    bg={bg}
+                    color={text}
+                    textColor={'text'}
                 >
-                    {children}
-                </Box>
-                <Spacer />
-                <Footer showBack={showBack} />
+                    <Header showBack={showBack} />
+                    <Box
+                        ml={[4, 12]}
+                        mr={[4, 0]}
+                        maxW={'40rem'}
+                        fontSize={'14px'}
+                    >
+                        {children}
+                    </Box>
+                    <Spacer />
+                    <Footer showBack={showBack} />
+                </Flex>
             </Flex>
         </>
     );

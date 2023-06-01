@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { IPostData } from './../../types';
 
 export const PostList = ({ posts }: { posts: IPostData[] }) => {
-    const link = useColorModeValue('#0000EE', '#69b9ff');
+    const link = useColorModeValue('brand.darkLink', 'brand.lightLink');
     return (
         <VStack align={'stretch'}>
             {posts.map(({ id, data }, i) => (

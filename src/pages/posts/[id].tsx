@@ -9,6 +9,7 @@ import {
     Spacer,
     Text,
     UnorderedList,
+    useColorMode,
     useColorModeValue,
     VStack
 } from '@chakra-ui/react';
@@ -25,7 +26,7 @@ import GenericPage from '../../layouts/GenericPage/GenericPage';
 
 const StyledHeading = (props: HeadingProps) => {
     return (
-        <Heading mt={4} mb={4} fontFamily={'monospace'} fontSize={'16px'}>
+        <Heading mt={4} mb={4} fontSize={'16px'}>
             {props.children}
         </Heading>
     );
@@ -43,9 +44,10 @@ const Post = (props: {
     twitterPostDescription: string;
     twitterPostImage: string;
 }) => {
-    const link = useColorModeValue('#0000EE', '#69b9ff');
+    const link = useColorModeValue('brand.darkLink', 'brand.lightLink');
     const text = useColorModeValue('brand.darkPrimary', 'brand.lightPrimary');
     const border = useColorModeValue('brand.darkPrimary', 'brand.lightPrimary');
+    const { colorMode } = useColorMode();
     if (!props.frontmatter) {
         return <></>;
     }
@@ -79,14 +81,33 @@ const Post = (props: {
                     code: (props) => {
                         if (props.inline) {
                             return (
-                                <Code ml={1} mr={1} pl={2} pr={2}>
+                                <Code
+                                    ml={1}
+                                    mr={1}
+                                    pl={2}
+                                    pr={2}
+                                    colorScheme={
+                                        colorMode === 'light'
+                                            ? 'blackAlpha'
+                                            : 'gray'
+                                    }
+                                >
                                     {props.children}
                                 </Code>
                             );
                         }
                         return (
                             <Box mt={4} mb={4} ml={4} mr={4}>
-                                <Code p={4} width={'100%'} overflow={'scroll'}>
+                                <Code
+                                    p={4}
+                                    width={'100%'}
+                                    overflow={'scroll'}
+                                    colorScheme={
+                                        colorMode === 'light'
+                                            ? 'blackAlpha'
+                                            : 'gray'
+                                    }
+                                >
                                     {props.children}
                                 </Code>
                             </Box>

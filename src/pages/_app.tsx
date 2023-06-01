@@ -1,4 +1,6 @@
 import '@fontsource/inter';
+import '@fontsource/ubuntu-mono/400.css';
+import '@fontsource/ubuntu-mono/700.css';
 
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import type { AppProps } from 'next/app';
@@ -6,7 +8,9 @@ import type { AppProps } from 'next/app';
 const colors = {
     brand: {
         darkPrimary: '#000',
-        lightPrimary: '#fff'
+        lightPrimary: '#FDF4DC',
+        darkLink: '#0000EE',
+        lightLink: '#69b9ff'
     }
 };
 
@@ -24,8 +28,8 @@ const customTheme = {
         }
     },
     fonts: {
-        heading: 'Inter',
-        body: 'Inter'
+        heading: 'Ubuntu Mono, monospace',
+        body: 'Ubuntu Mono, monospace'
     },
     colors,
     initialColorMode: 'light',

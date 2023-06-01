@@ -20,7 +20,7 @@ const Index = (props: {
     twitterPostDescription: string;
     twitterPostImage: string;
 }) => {
-    const link = useColorModeValue('#0000EE', '#69b9ff');
+    const link = useColorModeValue('brand.darkLink', 'brand.lightLink');
     return (
         <GenericPage
             title={props.title}
@@ -30,7 +30,7 @@ const Index = (props: {
             twitterPostImage={props.twitterPostImage}
             showBack={false}
         >
-            <Heading mt={4} mb={4} fontFamily={'monospace'} fontSize={'16px'}>
+            <Heading mt={4} mb={4} fontSize={'16px'}>
                 About
             </Heading>
             <Box maxW={'25rem'} w={'100%'}>
@@ -41,13 +41,13 @@ const Index = (props: {
                     reference.
                 </Text>
             </Box>
-            <Heading mt={4} mb={4} fontFamily={'monospace'} fontSize={'16px'}>
+            <Heading mt={4} mb={4} fontSize={'16px'}>
                 Posts
             </Heading>
             <Box ml={6}>
                 <PostList posts={props.posts} />
             </Box>
-            <Heading mt={4} mb={4} fontFamily={'monospace'} fontSize={'16px'}>
+            <Heading mt={4} mb={4} fontSize={'16px'}>
                 Contact
             </Heading>
             <VStack align={'left'} pl={6}>
