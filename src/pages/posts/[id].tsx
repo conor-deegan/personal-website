@@ -44,7 +44,6 @@ const Post = (props: {
     twitterPostDescription: string;
     twitterPostImage: string;
 }) => {
-    const link = useColorModeValue('brand.darkLink', 'brand.lightLink');
     const text = useColorModeValue('brand.darkPrimary', 'brand.lightPrimary');
     const border = useColorModeValue('brand.darkPrimary', 'brand.lightPrimary');
     const { colorMode } = useColorMode();
@@ -141,10 +140,18 @@ const Post = (props: {
                     },
                     a: (props) => {
                         return (
-                            <Link href={props.href as string} target={'_blank'}>
-                                <span style={{ color: link }}>
-                                    {props.children}
-                                </span>
+                            <Link
+                                href={props.href as string}
+                                target={'_blank'}
+                                style={{
+                                    textDecoration: 'underline',
+                                    color:
+                                        colorMode === 'light'
+                                            ? '#0000EE'
+                                            : '#69b9ff'
+                                }}
+                            >
+                                {props.children}
                             </Link>
                         );
                     },
