@@ -61,21 +61,49 @@ const Index = (props: {
             <VStack align={'left'} pl={6}>
                 <Text>
                     Email:{' '}
-                    <Link href={'mailto:conorjdeegan@gmail.com'} color={link}>
+                    <Link
+                        href={'mailto:conorjdeegan@gmail.com'}
+                        color={link}
+                        target={'_blank'}
+                    >
                         conorjdeegan@gmail.com
                     </Link>
                 </Text>
                 <Text>
                     Github:{' '}
-                    <Link href={'https://github.com/conor-deegan'} color={link}>
+                    <Link
+                        href={'https://github.com/conor-deegan'}
+                        color={link}
+                        target={'_blank'}
+                    >
                         Link
                     </Link>
                 </Text>
                 <Text>
                     Linkedin:{' '}
                     <Link
-                        href={'https://twitter.com/conordeegan4'}
+                        href={
+                            'https://www.linkedin.com/in/conor-deegan-587513189/'
+                        }
                         color={link}
+                        target={'_blank'}
+                    >
+                        Link
+                    </Link>
+                </Text>
+            </VStack>
+            <Heading mt={4} mb={4} fontSize={'16px'}>
+                Source Code
+            </Heading>
+            <VStack align={'left'} pl={6}>
+                <Text>
+                    Github:{' '}
+                    <Link
+                        href={
+                            'https://github.com/conor-deegan/personal-website'
+                        }
+                        color={link}
+                        target={'_blank'}
                     >
                         Link
                     </Link>
