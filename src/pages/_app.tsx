@@ -8,7 +8,9 @@ import type { AppProps } from 'next/app';
 const colors = {
     brand: {
         darkPrimary: '#000',
+        darkSecondary: '#110e1f',
         lightPrimary: '#FDF4DC',
+        lightSecondary: '#faeecd',
         darkLink: '#0000EE',
         lightLink: '#69b9ff'
     }

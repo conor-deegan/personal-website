@@ -1,24 +1,17 @@
-import { Box, Flex, Spacer, useColorModeValue } from '@chakra-ui/react';
+import { Flex, useColorModeValue } from '@chakra-ui/react';
 import Head from 'next/head';
 
-import Footer from '../../components/Footer/Footer';
 import Header from '../../components/Header/Header';
 
-const GenericPage = ({
+const ChatPage = ({
     children,
     title,
     description,
-    twitterPostTitle,
-    twitterPostDescription,
-    twitterPostImage,
     showBack
 }: {
     children: React.ReactNode;
     title: string;
     description: string;
-    twitterPostTitle?: string;
-    twitterPostDescription?: string;
-    twitterPostImage?: string;
     showBack: boolean;
 }) => {
     const bg = useColorModeValue('brand.lightPrimary', 'transparent');
@@ -37,15 +30,8 @@ const GenericPage = ({
                 <meta name="twitter:card" content="summary_large_image"></meta>
                 <meta name="twitter:site" content="@ConorDeegan4"></meta>
                 <meta name="twitter:creator" content="@ConorDeegan4"></meta>
-                <meta name="twitter:title" content={twitterPostTitle}></meta>
-                <meta
-                    name="twitter:description"
-                    content={twitterPostDescription}
-                ></meta>
-                <meta name="twitter:image" content={twitterPostImage}></meta>
             </Head>
             <Flex
-                w={'100vw'}
                 backgroundAttachment={'fixed'}
                 bgGradient={
                     'radial-gradient(at 10% 15%, rgba(8,6,34, 1), rgba(0, 0, 0, 1))'
@@ -56,25 +42,17 @@ const GenericPage = ({
                     w={'100%'}
                     h={'100%'}
                     minH={'100vh'}
+                    maxH={'100vh'}
                     bg={bg}
                     color={text}
                     textColor={'text'}
                 >
                     <Header showBack={showBack} />
-                    <Box
-                        ml={[4, 12]}
-                        mr={[4, 0]}
-                        maxW={'40rem'}
-                        fontSize={'14px'}
-                    >
-                        {children}
-                    </Box>
-                    <Spacer />
-                    <Footer showBack={showBack} />
+                    {children}
                 </Flex>
             </Flex>
         </>
     );
 };
 
-export default GenericPage;
+export default ChatPage;

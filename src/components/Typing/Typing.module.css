@@ -1,0 +1,37 @@
+.dotOne,
+.dotTwo,
+.dotThree {
+    background: #fff;
+    width: 5px;
+    height: 5px;
+    border: double;
+    border-color: black;
+    border-radius: 50%;
+    margin-top: 10px !important;
+}
+
+.dotOne {
+    animation: jump 1.6s -0.32s linear infinite;
+}
+
+.dotTwo {
+    animation: jump 1.6s -0.16s linear infinite;
+}
+
+.dotThree {
+    animation: jump 1.6s linear infinite;
+}
+
+@keyframes jump {
+    0%,
+    80%,
+    100% {
+        -webkit-transform: scale(0);
+        transform: scale(0);
+    }
+
+    40% {
+        -webkit-transform: scale(2);
+        transform: scale(2);
+    }
+}
