@@ -26,7 +26,7 @@ import GenericPage from '../../layouts/GenericPage/GenericPage';
 
 const StyledHeading = (props: HeadingProps) => {
     return (
-        <Heading mt={4} mb={4} fontSize={'16px'}>
+        <Heading mt={4} mb={4} fontSize={'18px'}>
             {props.children}
         </Heading>
     );
@@ -64,13 +64,13 @@ const Post = (props: {
                 borderBottomColor={border}
                 pb={4}
             >
-                <Box fontWeight={'bold'} fontSize={'16px'}>
+                <Heading fontWeight={'bold'} fontSize={'22px'}>
                     {props.frontmatter.title}
-                </Box>
+                </Heading>
                 <Spacer />
-                <Box fontWeight={'bold'} fontSize={'16px'}>
+                <Heading fontWeight={'bold'} fontSize={'22px'}>
                     {props.frontmatter.date}
-                </Box>
+                </Heading>
             </Flex>
             <ReactMarkdown
                 children={props.markdownBody}

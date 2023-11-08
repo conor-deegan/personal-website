@@ -65,7 +65,7 @@ const GenericPage = ({
                         ml={[4, 12]}
                         mr={[4, 0]}
                         maxW={'40rem'}
-                        fontSize={'14px'}
+                        fontSize={'16px'}
                     >
                         {children}
                     </Box>

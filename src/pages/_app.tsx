@@ -1,6 +1,7 @@
 import '@fontsource/inter';
 import '@fontsource/ubuntu-mono/400.css';
 import '@fontsource/ubuntu-mono/700.css';
+import '@fontsource-variable/inconsolata';
 
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import type { AppProps } from 'next/app';
@@ -8,8 +9,8 @@ import type { AppProps } from 'next/app';
 const colors = {
     brand: {
         darkPrimary: '#000',
-        darkSecondary: '#110e1f',
-        lightPrimary: '#FDF4DC',
+        darkSecondary: '#000',
+        lightPrimary: '#fff9e6',
         lightSecondary: '#faeecd',
         darkLink: '#0000EE',
         lightLink: '#69b9ff'
@@ -30,8 +31,8 @@ const customTheme = {
         }
     },
     fonts: {
-        heading: 'Ubuntu Mono, monospace',
-        body: 'Ubuntu Mono, monospace'
+        heading: 'Inconsolata Variable, Ubuntu Mono, monospace',
+        body: 'Inconsolata Variable, Ubuntu Mono, monospace'
     },
     colors,
     initialColorMode: 'light',

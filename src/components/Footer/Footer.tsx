@@ -17,7 +17,7 @@ const Footer = ({ showBack }: { showBack: boolean }) => {
         <Flex
             fontWeight={'normal'}
             color={link}
-            fontSize={'14px'}
+            fontSize={'16px'}
             pt={4}
             pb={10}
         >
