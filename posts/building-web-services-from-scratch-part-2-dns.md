@@ -218,8 +218,8 @@ nslookup example.com 127.0.0.1
 
 ### DNS Resolver
 
-WIP
+WIP. Middle man betweem client and server. Need to suss out ports to run it on.
 
 ### DNS Client
 
-WIP
+WIP - simple cli app that takes in a domain, gets the ip via the resolver and auth domain if ttl is up, it then pings the returned ip using curl. Need to suss out ports to run it on.
