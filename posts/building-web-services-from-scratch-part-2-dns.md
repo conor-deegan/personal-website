@@ -216,6 +216,8 @@ or using `nslookup`:
 nslookup example.com 127.0.0.1
 ```
 
+Weirdly, it works on first try...
+
 ### DNS Resolver I AM HERE!!!!!!
 
 WIP. Middle man between client and server. Need to suss out ports to run it on. May need docker soon with docker-compose?
