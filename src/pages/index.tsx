@@ -33,20 +33,14 @@ const Index = (props: {
             <Heading mt={4} mb={4} fontSize={'16px'}>
                 About
             </Heading>
-            <Box maxW={'25rem'} w={'100%'}>
+            <Box maxW={'30rem'} w={'100%'}>
                 <Text ml={6}>
-                    Software Engineer. Currently C.T.O of{' '}
-                    <Link
-                        href="https:pooldata.io"
-                        color={link}
-                        target={'_blank'}
-                    >
-                        Pooldata.io
-                    </Link>
-                    , previously C.T.O at Fuego and Head of Engineering at
-                    Recroot (Techstars 2020). The purpose of this site is to
-                    document stuff that I would normally keep in a private
-                    note/repo for reference.
+                    I'm a Software Engineer/Architect. I have 6+ years building
+                    and growing startups. I have been a founder, CTO, Head of
+                    Engineering, and Head of Product. I also have an MSc in
+                    Computer Science where I focused on Distributed Systems and
+                    AI. The purpose of this site is to document stuff that I
+                    would normally keep in a private note/repo for reference.
                 </Text>
             </Box>
             <Heading mt={4} mb={4} fontSize={'16px'}>

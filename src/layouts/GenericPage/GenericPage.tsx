@@ -21,7 +21,7 @@ const GenericPage = ({
     twitterPostImage?: string;
     showBack: boolean;
 }) => {
-    const bg = useColorModeValue('brand.lightPrimary', 'transparent');
+    const bg = useColorModeValue('brand.lightPrimary', 'brand.darkSecondary');
     const text = useColorModeValue('brand.darkPrimary', 'brand.lightPrimary');
     return (
         <>
@@ -47,16 +47,15 @@ const GenericPage = ({
             <Flex
                 w={'100vw'}
                 backgroundAttachment={'fixed'}
-                bgGradient={
-                    'radial-gradient(at 10% 15%, rgba(8,6,34, 1), rgba(0, 0, 0, 1))'
-                }
+                backgroundImage={'url(/noise.png)'}
+                backgroundRepeat={'repeat'}
+                backgroundColor={bg}
             >
                 <Flex
                     flexDirection={'column'}
                     w={'100%'}
                     h={'100%'}
                     minH={'100vh'}
-                    bg={bg}
                     color={text}
                     textColor={'text'}
                 >
