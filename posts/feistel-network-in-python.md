@@ -1,9 +1,7 @@
 ---
 title: "Feistel Network in Python"
 author: "Conor Deegan"
-date: "04-22"
 postNum: 3
-categories: ['cryptography']
 ---
 
 ### Introduction

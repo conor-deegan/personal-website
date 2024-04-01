@@ -1,16 +1,14 @@
 ---
 title: "Cryptographic Hash Functions"
 author: "Conor Deegan"
-date: "03-22"
 postNum: 1
-categories: ['cryptography', 'ethereum']
 ---
 
 ### Introduction
 
 The purpose of this article is to introduce cryptographic hash functions.
 
-Generally speaking a hash function is any function which can be used to map data of any size and type to a fixed sized integer. These values are then typically used as an index in a fixed size table called a hash table which can store and retrieve data in nearly constant time. Examples include dictionaries in Python, hashes in Ruby, and objects in Javascript. Hashes and hash tables used for this purpose are outside the scope of this article but can be read more about [here](https://en.wikipedia.org/wiki/Hash_function) and [here](https://en.wikipedia.org/wiki/Hash_table). 
+Generally speaking a hash function is any function which can be used to map data of any size and type to a fixed sized integer. These values are then typically used as an index in a fixed size table called a hash table which can store and retrieve data in nearly constant time. Examples include dictionaries in Python, hashes in Ruby, and objects in Javascript. Hashes and hash tables used for this purpose are outside the scope of this article but can be read more about [here](https://en.wikipedia.org/wiki/Hash_function) and [here](https://en.wikipedia.org/wiki/Hash_table).
 
 The main concept for moving forward is that we can take any type of data of any length and use a hash function to map that data to a fixed sized integer.
 
@@ -28,7 +26,7 @@ A cryptographic hash function is similar to a regular hash function with some sp
 
 *Note some of these requirements are also requirements for non-cryptographic hash functions.*
 
-Although in-depth use cases of cryptographic hash functions are outside the scope of this post, in order to motivate some of these requirements it's important to outline a simplistic use case. 
+Although in-depth use cases of cryptographic hash functions are outside the scope of this post, in order to motivate some of these requirements it's important to outline a simplistic use case.
 
 Storing users passwords in plaintext can lead to massive security breaches if access to the database they are stored in becomes compromised. A hash of a users password should be stored instead. Authenticating a user remains trivial, simply hash the password presented by the user and compare the result with the stored hash in the database. If the hashes match we can be sure that the user has presented the correct password (for reasons we will discuss). If access to the database was to become compromised, leaking the hashed passwords is less of a concern than leaking a users plaintext password.
 

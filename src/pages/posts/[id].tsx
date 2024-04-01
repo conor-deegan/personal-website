@@ -6,7 +6,6 @@ import {
     Flex,
     Heading,
     OrderedList,
-    Spacer,
     Text,
     UnorderedList,
     useColorMode,
@@ -26,7 +25,7 @@ import GenericPage from '../../layouts/GenericPage/GenericPage';
 
 const StyledHeading = (props: HeadingProps) => {
     return (
-        <Heading mt={4} mb={4} fontSize={'18px'}>
+        <Heading mt={4} mb={4} fontSize={'20px'}>
             {props.children}
         </Heading>
     );
@@ -66,10 +65,6 @@ const Post = (props: {
             >
                 <Heading fontWeight={'bold'} fontSize={'22px'}>
                     {props.frontmatter.title}
-                </Heading>
-                <Spacer />
-                <Heading fontWeight={'bold'} fontSize={'22px'}>
-                    {props.frontmatter.date}
                 </Heading>
             </Flex>
             <ReactMarkdown
@@ -157,14 +152,14 @@ const Post = (props: {
                     },
                     ol: (props) => {
                         return (
-                            <OrderedList ml={12} mt={4} mb={4}>
+                            <OrderedList ml={12} mt={4} mb={4} lineHeight={2}>
                                 {props.children}
                             </OrderedList>
                         );
                     },
                     ul: (props) => {
                         return (
-                            <UnorderedList ml={12} mt={4} mb={4}>
+                            <UnorderedList ml={12} mt={4} mb={4} lineHeight={2}>
                                 {props.children}
                             </UnorderedList>
                         );

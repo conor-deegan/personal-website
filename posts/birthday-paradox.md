@@ -1,9 +1,7 @@
 ---
 title: "The Birthday Paradox"
 author: "Conor Deegan"
-date: "05-22"
 postNum: 4
-categories: ['cryptography']
 ---
 
 ### Introduction

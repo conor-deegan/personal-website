@@ -30,7 +30,7 @@ const Index = (props: {
             twitterPostImage={props.twitterPostImage}
             showBack={false}
         >
-            <Heading mt={4} mb={4} fontSize={'16px'}>
+            <Heading mt={4} mb={4} fontSize={'20px'}>
                 About
             </Heading>
             <Box maxW={'30rem'} w={'100%'}>
@@ -43,13 +43,13 @@ const Index = (props: {
                     would normally keep in a private note/repo for reference.
                 </Text>
             </Box>
-            <Heading mt={4} mb={4} fontSize={'16px'}>
+            <Heading mt={4} mb={4} fontSize={'20px'}>
                 Posts
             </Heading>
             <Box ml={6}>
                 <PostList posts={props.posts} />
             </Box>
-            <Heading mt={4} mb={4} fontSize={'16px'}>
+            <Heading mt={4} mb={4} fontSize={'20px'}>
                 Contact
             </Heading>
             <VStack align={'left'} pl={6}>
@@ -86,7 +86,7 @@ const Index = (props: {
                     </Link>
                 </Text>
             </VStack>
-            <Heading mt={4} mb={4} fontSize={'16px'}>
+            <Heading mt={4} mb={4} fontSize={'20px'}>
                 Source Code
             </Heading>
             <VStack align={'left'} pl={6}>
@@ -121,20 +121,22 @@ export const getStaticProps = async () => {
     );
     const dedupedKeys = [...new Set(cleanPathKeys)];
     const values = dedupedKeys.map(webpackContext);
-    const posts = dedupedKeys.map((key, index) => {
-        const id = key
-            .replace(/^.*[\\/]/, '')
-            .split('.')
-            .slice(0, -1)
-            .join('.');
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const value: any = values[index];
-        const document = matter(value.default);
-        return {
-            data: document.data,
-            id
-        };
-    });
+    const posts = dedupedKeys
+        .map((key, index) => {
+            const id = key
+                .replace(/^.*[\\/]/, '')
+                .split('.')
+                .slice(0, -1)
+                .join('.');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            const value: any = values[index];
+            const document = matter(value.default);
+            return {
+                data: document.data,
+                id
+            };
+        })
+        .sort((a, b) => b.data.postNum - a.data.postNum);
 
     return {
         props: {

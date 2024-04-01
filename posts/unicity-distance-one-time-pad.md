@@ -1,9 +1,7 @@
 ---
 title: "Unicity Distance (OTP)"
 author: "Conor Deegan"
-date: "02-23"
 postNum: 7
-categories: ['cryptography']
 ---
 
 ### Introduction
@@ -12,7 +10,7 @@ This post will discuss the concept of unicity distance in cryptography and brief
 
 ### Unicity Distance
 
-Originally defined by [Claude Shannon](https://en.wikipedia.org/wiki/Claude_Shannon) in his 1949 paper "[Communication Theory of Secrecy Systems](https://en.wikipedia.org/wiki/Communication_Theory_of_Secrecy_Systems)”, unicity distance is the length of [ciphertext](https://en.wikipedia.org/wiki/Ciphertext) needed to break the cipher by reducing the number of spurious keys to zero in a [brute force attack](https://en.wikipedia.org/wiki/Brute_force_attack). 
+Originally defined by [Claude Shannon](https://en.wikipedia.org/wiki/Claude_Shannon) in his 1949 paper "[Communication Theory of Secrecy Systems](https://en.wikipedia.org/wiki/Communication_Theory_of_Secrecy_Systems)”, unicity distance is the length of [ciphertext](https://en.wikipedia.org/wiki/Ciphertext) needed to break the cipher by reducing the number of spurious keys to zero in a [brute force attack](https://en.wikipedia.org/wiki/Brute_force_attack).
 
 ### Spurious keys
 
@@ -54,7 +52,7 @@ For example, the redundancy of the English language has been found to be 3.2 bit
 
 $n_0 = \frac{\log_2 25}{3.2} = 1.45120 \approx 2$
 
-Meaning that with a ciphertext length of just 2 characters, an attacker have enough information to reduce the number of spurious keys to zero in a brute force attack. This is intuituve given how a Caesar cipher functions. 
+Meaning that with a ciphertext length of just 2 characters, an attacker have enough information to reduce the number of spurious keys to zero in a brute force attack. This is intuituve given how a Caesar cipher functions.
 
 ### Security
 
@@ -68,7 +66,7 @@ Generally speaking, in a secure cipher $n_0$ should be as large as possible.
 
 ### One-time pad
 
-### 
+###
 
 The [One-time pad](https://en.wikipedia.org/wiki/One-time_pad) (OTP) is a perfect cipher that cannot be cracked. In the OTP the plaintext and key are combined (XOR in binary) to produce the ciphertext. In the OTP cipher, the key must be:
 

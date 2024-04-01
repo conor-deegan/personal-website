@@ -1,9 +1,7 @@
 ---
 title: "Diffie–Hellman key exchange"
 author: "Conor Deegan"
-date: "03-23"
 postNum: 5
-categories: ['cryptography']
 ---
 
 ### Introduction
@@ -50,7 +48,7 @@ With the above algorithm we can now generate $p$, a 2,048-bit prime.
 
 ### Primitive roots
 
-In order to compute $g$, we must first briefly look at groups, subgroups, and primitive roots. 
+In order to compute $g$, we must first briefly look at groups, subgroups, and primitive roots.
 
 - A [group](https://en.wikipedia.org/wiki/Group_theory) is a set of numbers, together with an operation (addition/multiplication), which is closed within the set. What this means is that any operation performed on an element in a group will result in another element within that group. We denote a group as $\mathbb{Z}^{*}_p = {1,…,p-1}$ - this denotes a group with multiplication $\pmod{p}$.
 - A subgroup, is a subset of a group which forms a group by itself.
@@ -118,7 +116,7 @@ If $g$ is not a primitive root of $p$, $g$ may generate a smaller subgroup withi
 
 Given a public key $A$, no efficient method is known to compute $a$ such that $A = g^a \mod p$. This is known as the discrete logarithm problem. This is why sharing your public key is safe.
 
-One option for an attacker, Mallet, would be to perform a brute force attack. I.e compute $A$ for all $a$ = 1, 2, 3,…, p-2. This gives a complexity of $O(p)$ and a very large prime (2,048-bits) makes this infeasible. However, given $a$ it is trivial to compute $A$ using exponentiation by squaring. 
+One option for an attacker, Mallet, would be to perform a brute force attack. I.e compute $A$ for all $a$ = 1, 2, 3,…, p-2. This gives a complexity of $O(p)$ and a very large prime (2,048-bits) makes this infeasible. However, given $a$ it is trivial to compute $A$ using exponentiation by squaring.
 
 Some algorithms exist that perform better than a rudimentary brute force attack, see the [index calculus algorithm](https://en.wikipedia.org/wiki/Index_calculus_algorithm#History). The record discrete logarithm computation is for a 795-bit number, [see here](https://en.wikipedia.org/wiki/Discrete_logarithm_records), this is considerably lower than the 2,048-bit numbers commonly used.
 

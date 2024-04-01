@@ -1,9 +1,7 @@
 ---
 title: "RSA"
 author: "Conor Deegan"
-date: "06-22"
 postNum: 6
-categories: ['cryptography']
 ---
 
 ### Introduction
@@ -121,7 +119,7 @@ Interestingly, a recent paper by Schnorr [6], controversially claimed that a new
 
 # RSA in Python
 
-A complete implementation of RSA in Python can be found [here](https://github.com/conor-deegan/sandbox/tree/main/rsa-python). The code should be self explanatory given the information above. 
+A complete implementation of RSA in Python can be found [here](https://github.com/conor-deegan/sandbox/tree/main/rsa-python). The code should be self explanatory given the information above.
 
 One interesting point that I have not discussed is how to compute $b = a^c$ efficiently if $c$ is large. One way to handle this is by using [exponentiation by squaring](https://en.wikipedia.org/wiki/Exponentiation_by_squaring). In the code you will notice on line 41 of `main.py` I compute the ciphertext by raising the plaintext to the power of $e$ directly. This is feasible given $e$ is relatively small. However, on line 45 of `main.py`, I compute the plaintext by using exponentiation by squaring instead as $d$ is too large to compute this directly. Python comes with a built in function to handle this - see [here](https://docs.python.org/2/library/functions.html#pow).
 

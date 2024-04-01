@@ -9,7 +9,7 @@ export const PostList = ({ posts }: { posts: IPostData[] }) => {
         <VStack align={'stretch'}>
             {posts.map(({ id, data }, i) => (
                 <HStack key={i}>
-                    <Text>{data.date}:</Text>
+                    <Text>{data.postNum}:</Text>
                     <Link href={`/posts/${id}`}>
                         <Text color={link}>{data.title}</Text>
                     </Link>

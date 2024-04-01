@@ -1,14 +1,12 @@
 ---
 title: "Elliptic Curve Cryptography"
 author: "Conor Deegan"
-date: "03-22"
 postNum: 2
-categories: ['cryptography', 'ethereum']
 ---
 
 ### Introduction
 
-The purpose of this post is to introduce Elliptic Curve Cryptography (ECC) as a primer for use it's use in Web3. 
+The purpose of this post is to introduce Elliptic Curve Cryptography (ECC) as a primer for use it's use in Web3.
 
 ## Motivation
 
@@ -50,7 +48,7 @@ Prime factorisation is simply a way of expressing a number as a product of its p
 
 *One of the reasons prime numbers are so fundamental in cryptography is because when you multiply two together, the result is a number that can only be broken down into those primes (and itself and 1).*
 
-Here is a working example of the RSA algorithm: 
+Here is a working example of the RSA algorithm:
 
 1. Choose two random prime numbers `p` and `q`. Typically these two numbers will be very large and chosen at random. These are kept secret.
 
@@ -180,7 +178,7 @@ A typical elliptic curve takes the following form
 
 In order for the cryptography to work the elliptic curves used in ECC are set to be over a [finite field](https://en.wikipedia.org/wiki/Finite_field) `p` where `p` is prime and greater than 3.
 
-A finite field is a field that contains a finite number of elements rather than being continuous over all real numbers. This means that the points on an elliptic curve over a finite field are limited to integer coordinates within the field and any algebraic operation will result in another point within the field. 
+A finite field is a field that contains a finite number of elements rather than being continuous over all real numbers. This means that the points on an elliptic curve over a finite field are limited to integer coordinates within the field and any algebraic operation will result in another point within the field.
 
 An elliptic curve over a finite field can be defined as
 
@@ -206,7 +204,7 @@ x^3 + ax + b - y^2 ≡ 0 (mod p)
 
 If the result of the above operation is zero then that point lies on that elliptic curve, otherwise it does not.
 
-When two points on an elliptic curve over a finite field are added together the result is another point on the elliptic curve. 
+When two points on an elliptic curve over a finite field are added together the result is another point on the elliptic curve.
 
 ```
 T + Q = P
@@ -246,7 +244,7 @@ In ECC, a public key is a `(x,y)`  point on an elliptic curve. This point is cal
 public_key = private_key * G
 ```
 
-Where `G` is a constant known as the generator point and `*` is the elliptic curve multiplication operator. We know from the above arithmetic that multiplying a point `G` on an elliptic curve by an integer `k` (the private key) will result in another point (the public key) that will lie on the same elliptic curve as `G`. 
+Where `G` is a constant known as the generator point and `*` is the elliptic curve multiplication operator. We know from the above arithmetic that multiplying a point `G` on an elliptic curve by an integer `k` (the private key) will result in another point (the public key) that will lie on the same elliptic curve as `G`.
 
 This operation is a one way operation. It is trivial to calculate the public key knowing the private key but you cannot find the private key only knowing the public key. This reverse operation, which would be simple division with normal numbers, is known as finding the discrete logarithm in elliptic curve arithmetic. Calculating the private key when you only know the public key is as difficult as trying a brute force search of the entire key space for all possible values of the private key - needless to say this would take a very long time!
 
