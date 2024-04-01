@@ -18,7 +18,7 @@ I plan to document my progress with this mini series of posts. Feel free to foll
 
 ### What services am I going to build?
 
-- DNS server with support for A records and possibly MX records: [here](/posts/building-web-services-from-scratch-part-2-dns)
+- DNS server, client, and resolver with support for A records and possibly MX records: [here](/posts/building-web-services-from-scratch-part-2-dns)
 - HTTP API: [here](/posts/building-web-services-from-scratch-part-3-http-api)
 - Load balancer with support for round-robin and path based routing: [here](/posts/building-web-services-from-scratch-part-4-load-balancer)
 - Persistent row oriented data store: [here](/posts/building-web-services-from-scratch-part-5-data-store)
@@ -32,5 +32,6 @@ I plan to document my progress with this mini series of posts. Feel free to foll
 - I want to try to keep this as simple as possible.
 - I plan to use Rust or Typescript for almost everything.
 - I will try to avoid using any libraries that do the heavy lifting for me however I want to focus on the core functionality of the services so I may cheat a little.
+- I won't be explaining much theory, these services are all pretty self-explanatory and there are plenty of resources online that explain how they work. I will focus on the implementation.
 
 Right, let's get started. I am going to start with the DNS set up. I have pretty much no idea how DNS *actually* works (something something port 53) so this should be fun...
