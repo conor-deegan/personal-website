@@ -21,8 +21,8 @@ const colors = {
 };
 
 const config = {
-    initialColorMode: 'light',
-    useSystemColorMode: false
+    initialColorMode: 'dark',
+    useSystemColorMode: true
 };
 
 const customTheme = extendTheme({
