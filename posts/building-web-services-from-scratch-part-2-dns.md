@@ -12,13 +12,15 @@ The final code is available on [GitHub](https://github.com/conor-deegan/web-serv
 
 Let's get started.
 
+Edit: this post ended up being quite long. I wasn't bothered to split it out but normally these posts will be considerably shorter.
+
 ### Some scope
 
 - I'm going to build an authoritative DNS server. This means that it will be responsible for a specific domain as it will host the domain's zone file.
-- I'm going to build a simple DNS client to test the server.
+- I'm going to build a simple DNS client (however, I will call this application the ingress-client, which will make sense later) to test the server.
 - I am going to build a **very** simple DNS resolver which is responsible for querying the authoritative DNS server for a specific domain and caching the results for a specific TTL and then returning the IP address to the client.
 - For now, the DNS server will only support A records. I may add support for MX records in the future.
-- I am absolutely not going to write about the DNS protocol in detail, Google will do a much better job at that than me (this applies to almost every web service I will build).
+- I am absolutely not going to write about a whole lot about the DNS protocol in detail, Google will do a much better job at that than me (this applies to almost every web service I will build).
 
 ### WTF is DNS?
 
@@ -27,6 +29,15 @@ Easy, it does this:
 ```
 conordeegan.dev -> 104.21.79.122
 ```
+
+The *rough* steps it takes to do this are:
+
+- Initial Query: The process starts when a user's device asks a DNS resolver (usually from their ISP or a third-party) to find example.com's IP address.
+- Root Nameserver Query: The resolver, unsure where example.com is, asks a root nameserver, which directs it towards servers handling .com domains.
+- TLD Nameserver Query: Guided by the root nameserver, the resolver approaches a .com domain server. This server knows which nameservers manage example.com but not its IP.
+- Authoritative Nameserver Query: The resolver then asks example.com's specific nameserver, as indicated by the .com server. This nameserver knows example.com's IP.
+- Caching: After getting the IP from this nameserver, the resolver saves it for a time determined by the TTL. This caching speeds up future requests for the same site.
+- Response to User's Device: The resolver finally sends the IP address to the user's device, enabling the browser to request example.com via HTTP from its web server.
 
 How are DNS clients, resolvers and servers related?
 
@@ -45,10 +56,10 @@ The server will listen on port 53 for UDP packets. The server will parse the DNS
 The domain zone file I will use looks like:
 
 ```
-example.com=192.0.2.1,3600
+example.com=0.0.0.0,3600
 ```
 
-Where `example.com` is the domain name, `192.02.1` is the IP address, and `3600` is the TTL (time to live) in seconds.
+Where `example.com` is the domain name, `0.0.0.0` is the IP address, and `3600` is the TTL (time to live) in seconds.
 
 I am cheating a bit here and in reality the zone file would contain a lot more information than this. However, for the purposes of this post, this will do and is close enough to the real thing.
 
@@ -148,6 +159,39 @@ fn parse_domain_name(buf: &[u8], start: usize) -> Result<String, &'static str> {
 }
 ```
 
+Sicko, the last thing we need to do is handle when no A record is found for the domain name in the query. We will create a function to send a DNS response with an error message (NXDOMAIN) back to the client/resolver. This function takes the transaction ID, request buffer, request length, client address, and UDP socket as input and sends a DNS response packet with the NXDOMAIN error code back to the client/resolver.
+
+```rust
+async fn send_nxdomain_response(
+    transaction_id: [u8; 2],
+    request: &[u8],
+    request_len: usize,
+    addr: &std::net::SocketAddr,
+    socket: &tokio::net::UdpSocket,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut response = Vec::new();
+
+    // Transaction ID
+    response.extend_from_slice(&transaction_id);
+
+    // Flags: Response, Opcode 0 (Standard Query), Authoritative Answer False, Truncated False,
+    // Recursion Desired True, Recursion Available False, Z Reserved, Answer Authenticated False,
+    // Non-authenticated data Acceptable, Reply Code NXDOMAIN (3)
+    response.extend_from_slice(&[0x81, 0x83]); // Note: 0x83 indicates NXDOMAIN
+
+    // Questions: 1, Answer RRs: 0, Authority RRs: 0, Additional RRs: 0
+    response.extend_from_slice(&[0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
+
+    // Repeat the question section from the request
+    response.extend_from_slice(&request[12..request_len]);
+
+    // Sending the NXDOMAIN response
+    socket.send_to(&response, addr).await?;
+
+    Ok(())
+}
+```
+
 Finally, we can put everything together in the main function. The main function will load the A records from the domain zone file, bind the server to UDP port 53, listen for incoming DNS queries, parse the domain name from the query, and send the appropriate DNS response back to the client.
 
 ```rust
@@ -180,16 +224,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         }
                     },
                     None => {
-                        // Constructing NXDOMAIN response (using a lot of ChatGPT here)
                         let transaction_id = [buf[0], buf[1]];
-                        let mut response = Vec::new();
-
-                        // Transaction ID
-                        response.extend_from_slice(&transaction_id);
-                        response.extend_from_slice(&[0x81, 0x83]); // Note: 0x83 indicates NXDOMAIN
-                        response.extend_from_slice(&[0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-                        response.extend_from_slice(&buf[12..len]);
-                        if let Err(e) = socket.send_to(&response, &addr).await {
+                        if let Err(e) = send_nxdomain_response(transaction_id, &buf, buf.len(), &addr, &socket).await {
                             eprintln!("Failed to send NXDOMAIN response: {}", e);
                         } else {
                             println!("Sent NXDOMAIN response to {}", addr);
@@ -207,116 +243,192 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 That's that 🔥 Now, you can run the authoritive DNS server using `cargo run` and test it by sending DNS queries to `127.0.0.1` on port 53. For example,
 
 ```bash
-dig @127.0.0.1 -p 53 example.com
+$ dig @127.0.0.1 -p 53 example.com
 ```
 
 or using `nslookup`:
 
 ```bash
-nslookup example.com 127.0.0.1
+$ nslookup example.com 127.0.0.1
 ```
 
 Weirdly, it works on first try...
 
-### DNS Resolver I AM HERE!!!!!!
+### DNS Resolver
 
-WIP. Middle man between client and server. Need to suss out ports to run it on. May need docker soon with docker-compose?
+Right, the authoritive server is done. Now, we need to build the resolver. The resolver will be a simple DNS server that accepts DNS queries from DNS clients, if the requested domain is in the resolvers cache and not expired, it sends the response back to the client. If the requested domain is not in the cache, it forwards the query to the authoritive server, caches the response, and sends the response back to the client.
 
-DO I NEED TO UPDATE THE DOMAIN FILE: I believe the ns ips are the same as the auth server. This may be needed for the resolver to work.
+First up, we need to implement a simple DNS cache to store the DNS responses. The cache will store the IP address and the time the entry is valid until. If the entry is expired, it will be removed from the cache.
 
-```
-; Zone file for example.com
-$TTL 3600
-@    IN    SOA   ns1.example.com. admin.example.com. (
-              2024040101 ; Serial
-              7200       ; Refresh
-              800        ; Retry
-              86400      ; Expire
-              3600 )     ; Negative Cache TTL
+```rust
+struct CacheEntry {
+    ip_address: Ipv4Addr,
+    valid_until: u64,
+}
 
-; Define the nameservers
-@            IN    NS     ns1.example.com.
-@            IN    NS     ns2.example.com.
+struct DnsCache {
+    entries: HashMap<String, CacheEntry>,
+}
 
-; A records for nameservers
-ns1          IN    A      192.0.2.1
-ns2          IN    A      192.0.2.2
+// simple DNS Cache implementation
+impl DnsCache {
+    fn new() -> Self {
+        DnsCache { entries: HashMap::new() }
+    }
 
-; A record for the domain
-@            IN    A      198.51.100.1
+    fn get(&self, domain: &str) -> Option<(Ipv4Addr, u64)> {
+        if let Some(entry) = self.entries.get(domain) {
+            // Check if the entry is still valid
+            let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
+            if entry.valid_until > now {
+                return Some((entry.ip_address, entry.valid_until));
+            }
+        }
+        None
+    }
 
-; MX records for mail exchange
-@            IN    MX 10  mail.example.com.
-@            IN    MX 20  backup-mail.example.com.
-
-; A record for mail servers
-mail         IN    A      198.51.100.2
-backup-mail  IN    A      198.51.100.3
-
-; CNAME record for www
-www          IN    CNAME  example.com.
-
-; TXT record for SPF and other purposes
-@            IN    TXT    "v=spf1 ip4:198.51.100.2 ~all"
-
-; SRV record for SIP service
-_sip._tcp    IN    SRV    10 5 5060 sipserver.example.com.
-
-; A record for additional services
-sipserver    IN    A      198.51.100.4
+    fn insert(&mut self, domain: &str, ip_address: Ipv4Addr, ttl: u32) {
+        let valid_until = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() + u64::from(ttl);
+        self.entries.insert(domain.to_string(), CacheEntry { ip_address, valid_until });
+    }
+}
 ```
 
-Explanation of Each Section
-$TTL 3600: The Time To Live (TTL) value in seconds for DNS records, indicating how long a resolver should cache the DNS information.
-SOA Record: Start of Authority record defines global parameters for the zone, including the primary nameserver, the email of the domain administrator, the domain serial number, and timers.
-NS Records: Nameserver records that point to the authoritative nameservers for the domain.
-A Records: Address records that map a domain name to an IP address.
-MX Records: Mail exchange records that define the mail servers for accepting email on behalf of the domain.
-CNAME Record: Canonical Name record that allows aliasing one domain name to another (the 'canonical' domain).
-TXT Record: Text records used for various purposes, including SPF records to prevent email spoofing.
-SRV Record: Service locator records used in identifying servers for specified services.
-This file is a basic template, and the actual content might vary based on the specific needs of the domain, such as additional A records for subdomains, AAAA records for IPv6 addresses, or additional TXT records for DKIM or other verifications. Each record type serves a different purpose, and together, they control how traffic is directed for the domain across the internet.
+Next up, we can use some of the functions we created for the DNS authoritive server above in the resolver. We can copy the `send_nxdomain_response`, `parse_domain_name`, and `create_dns_response` functions directly to the resolver. Yeah yeah yeah, I know, code duplication is bad, use libs, or workspaces, or whatever. But for now, we just hack.
 
-In a DNS zone file, the combination of NS records and A records for nameservers serves a critical function in defining how a domain's DNS is managed and resolved.
+The last function we need to create, apart from the main function, is a function to forward the DNS query to the authoritive server if the requested domain is not in the cache.
 
-NS Records: These specify the authoritative nameservers for the domain. The NS records within the zone file tell the rest of the internet which servers have the authoritative DNS information for the domain example.com. When a query is made for the domain, these NS records are checked to find out which server to ask for the definitive DNS information.
+```rust
+async fn query_authoritative_server(domain: &str) -> Result<(Ipv4Addr, u32), Box<dyn Error>> {
+    // Connect to the authoritative DNS server
+    let server_addr = "0.0.0.0:53";
+    let socket = UdpSocket::bind("0.0.0.0:0").await?;
+    socket.connect(server_addr).await?;
 
+    // Construct the DNS query message
+    let mut query = Vec::with_capacity(512);
+    query.extend_from_slice(&[0x00, 0x01]); // Transaction ID
+    query.extend_from_slice(&[0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // Flags and Counts
+    for label in domain.split('.') {
+        query.push(label.len() as u8);
+        query.extend_from_slice(label.as_bytes());
+    }
+    query.push(0); // end of domain name
+    query.extend_from_slice(&[0x00, 0x01, 0x00, 0x01]); // QType and QClass
+
+    socket.send(&query).await?;
+
+    // Receive the DNS response
+    let mut response = [0u8; 512];
+    let _ = socket.recv(&mut response).await?;
+
+    // Check for NXDOMAIN response
+    // The RCODE is the last four bits of the second byte of the flags section
+    // which itself is the second and third bytes of the response
+    let rcode = response[3] & 0x0F;
+    if rcode == 3 {
+        // NXDOMAIN
+        return Err("NXDOMAIN: The domain name does not exist.".into());
+    }
+
+    let ip_start = 14 + (domain.len() + 2) + 4 + 10; // Skip to the answer part
+    let ip_address = Ipv4Addr::new(
+        response[ip_start],
+        response[ip_start + 1],
+        response[ip_start + 2],
+        response[ip_start + 3],
+    );
+
+    // TTL is 6 bytes before the IP address in the answer
+    let ttl_bytes = &response[ip_start - 6..ip_start - 2];
+    let ttl = u32::from_be_bytes(ttl_bytes.try_into()?);
+
+    Ok((ip_address, ttl))
+}
 ```
-; Define the nameservers
-@            IN    NS     ns1.example.com.
-@            IN    NS     ns2.example.com.
+
+I spent a lot of time banging my head against the wall trying to figure out the bytes above, but it's working! Now, we can implement the main function for the resolver. The main function will listen for DNS queries from clients, check if the requested domain is in the cache, and send the response back to the client. If the domain is not in the cache, it will forward the query to the authoritive server, cache the response, and send the response back to the client.
+
+```rust
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let resolver_socket = UdpSocket::bind("0.0.0.0:5354").await?;
+    println!("DNS Resolver listening on {}", resolver_socket.local_addr()?);
+
+    let mut cache = DnsCache::new();
+
+    let mut request = [0u8; 512];
+
+    loop {
+        let (_, client_addr) = resolver_socket.recv_from(&mut request).await?;
+        println!("Received query from {}", client_addr);
+
+        match parse_domain_name(&request, 12) {
+            Ok(domain) => {
+                 println!("Parsed domain: {}", domain);
+
+                 // Check if the domain is in the cache
+                 if let Some((ip_address, ttl)) = cache.get(&domain) {
+                      // Send the cached IP address to the client
+                      println!("Cache hit: {} -> {}", domain, ip_address);
+                      let transaction_id = [request[0], request[1]];
+                      let ttl_u32 = ttl as u32; // Convert u16 to u32
+                      let response = create_dns_response(transaction_id, &domain, ip_address, ttl_u32);
+                      if let Err(e) = resolver_socket.send_to(&response, &client_addr).await {
+                          eprintln!("Failed to send response: {}", e);
+                      } else {
+                          println!("Sent response to {} for domain {} and ip {}", client_addr, domain, ip_address);
+                      }
+                  } else {
+                      // Query the authoritative server for the IP address
+                      match query_authoritative_server(&domain).await {
+                          Ok((ip_address, ttl)) => {
+                              println!("Cache miss: {} -> {} {}", domain, ip_address, ttl);
+                              // Insert the domain and IP address into the cache
+                              cache.insert(&domain, ip_address, ttl);
+
+                              let transaction_id = [request[0], request[1]];
+                              let response = create_dns_response(transaction_id, &domain, ip_address, ttl);
+                              if let Err(e) = resolver_socket.send_to(&response, &client_addr).await {
+                                  eprintln!("Failed to send response: {}", e);
+                              } else {
+                                  println!("Sent response to {} for domain {} and ip {}", client_addr, domain, ip_address);
+                              }
+                          },
+                          Err(_e) => {
+                              // Send a NXDOMAIN response to the client
+                              let transaction_id = [request[0], request[1]];
+                              if let Err(e) = send_nxdomain_response(transaction_id, &request, request.len(), &client_addr, &resolver_socket).await {
+                                  eprintln!("Failed to send NXDOMAIN response: {}", e);
+                              } else {
+                                  println!("Sent NXDOMAIN response to {}", client_addr);
+                              }
+                          }
+                      }
+                  }
+            },
+            Err(e) => eprintln!("Failed to parse domain name: {}", e),
+        }
+    }
+}
 ```
-In this example, ns1.example.com and ns2.example.com are declared as the nameservers for example.com. The "@" symbol represents the root or apex of the domain being configured, indicating these NS records are for the entire example.com domain.
 
-A Records for Nameservers: These records map the nameserver hostnames to their respective IP addresses. Without these A records, the internet would not know how to find ns1.example.com or ns2.example.com because it wouldn't have their IP addresses.
+DONE 🤝. We can test the resolver and authoritative server together:
 
+Run both the resolver and authoritative server in separate terminals using `cargo run`.
+
+We can then use the `dig` or `nslookup` command to query the resolver:
+
+```bash
+$ nslookup example.com 0.0.0.0 -port=5354
 ```
-; A records for nameservers
-ns1          IN    A      192.0.2.1
-ns2          IN    A      192.0.2.2
+
+```bash
+$ nslookup example.com 0.0.0.0 -port=5354
 ```
 
-Here, ns1.example.com is mapped to the IP address 192.0.2.1, and ns2.example.com is mapped to 192.0.2.2. This mapping is essential for any external entity trying to resolve domain names under example.com because it tells them where to find the authoritative DNS servers for the domain.
+All going well, the commands should return the IP adddress of example.com: 0.0.0.0 and the TTL of example.com: 3600. You will notice that the first query will be a cache miss, and the second query will be a cache hit! It works!
 
-The presence of both these types of records in a zone file is crucial for DNS resolution. The NS records define the servers responsible for the domain's DNS, while the A records for the nameservers provide the specific IP addresses needed to contact those servers. This setup ensures that when a lookup for example.com or any of its subdomains is performed, the query can be directed to the correct server based on the NS information and then reach that server using the IP address specified in the A record.
-
-he process by which the internet finds the nameserver records for a domain is a fundamental aspect of how the Domain Name System (DNS) works. DNS is essentially the internet's phone book; it translates human-friendly domain names (like example.com) into IP addresses that computers use to communicate. Here’s a simplified overview of how the internet finds the nameserver records for a domain:
-
-Root Nameservers: Every DNS lookup begins with a query to one of the root nameservers. The root zone acts as the top of the DNS hierarchy and contains pointers to the servers managing the Top-Level Domains (TLDs) like .com, .net, .org, etc. There are 13 sets of these root nameservers, identified by letters A through M, distributed globally and operated by various organizations.
-
-TLD Nameservers: Once the query reaches a root nameserver, it is redirected to the TLD nameservers for the domain's TLD (for example.com, this would be the .com TLD nameservers). The TLD nameservers are responsible for managing all the domain names within that TLD and have records pointing to the authoritative nameservers for each domain.
-
-Authoritative Nameservers: The TLD nameserver responds with the addresses of the domain's authoritative nameservers (the NS records for example.com, in this case). These are the servers that have the complete, authoritative DNS records for the domain.
-
-A or AAAA Records: Finally, the authoritative nameserver is queried for the specific DNS record needed (such as an A record for an IPv4 address or AAAA for an IPv6 address). If the original query was to find the nameserver records themselves, this step would already be completed by reaching the authoritative nameservers.
-
-Example Process:
-A user wants to visit example.com.
-Their computer queries a root nameserver, which directs the query to the .com TLD nameserver.
-The .com TLD nameserver then points to the authoritative nameservers for example.com, as specified in its NS records.
-The user’s computer queries one of these authoritative nameservers for example.com's A record to find the IP address of the web server hosting example.com.
-This hierarchical querying ensures that DNS lookups are efficiently directed from the most general level (the root) to the specific (the domain’s authoritative nameserver), even if the initial query only knows the domain name. DNS caching at various levels, including the operating system, DNS resolvers, and routers, can significantly speed up this process by storing the results of previous lookups for a set period.
-
-### DNS Client
+### DNS Client (we are calling this ingress-client)
 
 WIP - simple cli app that takes in a domain, gets the ip via the resolver or auth domain if ttl is up, it then pings the returned ip using curl. Need to suss out ports to run it on. Can it take a path and method to ping with?
