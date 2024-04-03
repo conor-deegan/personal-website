@@ -1,4 +1,4 @@
-import { Box, Flex, Spacer, useColorModeValue } from '@chakra-ui/react';
+import { Flex, Spacer, useColorModeValue } from '@chakra-ui/react';
 import Head from 'next/head';
 
 import Footer from '../../components/Footer/Footer';
@@ -53,21 +53,16 @@ const GenericPage = ({
             >
                 <Flex
                     flexDirection={'column'}
-                    w={'100%'}
+                    w={['90%', '40%']}
+                    margin={'auto'}
                     h={'100%'}
                     minH={'100vh'}
                     color={text}
                     textColor={'text'}
+                    fontSize={'16px'}
                 >
                     <Header showBack={showBack} />
-                    <Box
-                        ml={[4, 12]}
-                        mr={[4, 0]}
-                        maxW={'40rem'}
-                        fontSize={'16px'}
-                    >
-                        {children}
-                    </Box>
+                    {children}
                     <Spacer />
                     <Footer showBack={showBack} />
                 </Flex>

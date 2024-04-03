@@ -15,19 +15,17 @@ const Header = ({ showBack }: { showBack: boolean }) => {
             pb={4}
         >
             {showBack && (
-                <Box ml={[4, 12]}>
+                <Box>
                     ← <Link href="/">Back</Link>
                 </Box>
             )}
             {!showBack && (
-                <Box ml={[4, 12]} color={text}>
+                <Box color={text}>
                     conordeegan.dev {new Date().getFullYear()}
                 </Box>
             )}
             <Spacer />
-            <Box mr={[4, 12]}>
-                <ToggleColorMode />
-            </Box>
+            <ToggleColorMode />
         </Flex>
     );
 };

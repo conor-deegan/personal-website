@@ -429,6 +429,212 @@ $ nslookup example.com 0.0.0.0 -port=5354
 
 All going well, the commands should return the IP adddress of example.com: 0.0.0.0 and the TTL of example.com: 3600. You will notice that the first query will be a cache miss, and the second query will be a cache hit! It works!
 
-### DNS Client (we are calling this ingress-client)
+### DNS Client (aka the ingress-client)
 
-WIP - simple cli app that takes in a domain, gets the ip via the resolver or auth domain if ttl is up, it then pings the returned ip using curl. Need to suss out ports to run it on. Can it take a path and method to ping with?
+The DNS client, which I will call the ingress-client from now on, will be a simple CLI app which takes an endpoint and HTTP method as arguments. The client will send a DNS query to the resolver, receive the IP address of the requested domain, and then connect to the server via HTTP. Simple?!
+
+I am calling this service ingress-client because it will be the entry point for all incoming requests to our "cloud".
+- A request will start from the ingress-client, which will resolve the IP address of the load balancer using the DNS resolver and DNS authoritive server.
+- The ingress client will then connect to the load balancer using the resolved IP address and send the HTTP request.
+- From there, the load balancer will forward the request to the appropriate server using the round-robin algorithm.
+- The server will then process the request (interacting with our hand made database and cache) and send the response back to the ingress-client via the load balancer.
+
+At least, that's the plan...
+
+The ingress-client will have a very similar interface to curl, with the following options:
+
+- `-X` or `--request`: The HTTP method to use (GET, POST, PUT, DELETE, etc.)
+- `-d` or `--data`: The data to send with the request (e.g. POST data)
+- `-H` or `--header`: The headers to send with the request (e.g. Content-Type: application/json).
+
+For example a GET request to example.com would look like this:
+
+```bash
+$ cargo run http://example.com/api/v1/spells
+```
+
+A POST request to example.com with some data would look like this:
+
+```bash
+$ cargo run -- -X POST -H "Content-Type: application/json" -d '{"spell":"accio","purpose":"summoning"}' http://example.com/api/v1/spells
+```
+
+Right so the first thing we need for our ingress client is a function for it to query the DNS resolver. The function will take the domain name as an argument and return the IP address. Lazy as I am, I will copy the `query_authoritative_server` function from the resolver and modify it to query the resolver instead. Copy and paste babyyyyy!
+
+```rust
+// Query the DNS resolver for the IP address of a domain
+async fn query_dns_resolver(domain: &str) -> Result<Ipv4Addr, Box<dyn Error>> {
+    // Connect to the DNS resolver
+    let resolver_addr = "0.0.0.0:5354";
+    let socket = UdpSocket::bind("0.0.0.0:0").await?;
+    socket.connect(resolver_addr).await?;
+
+    // Construct the DNS query message
+    let mut query = Vec::with_capacity(512);
+    query.extend_from_slice(&[0x00, 0x01]); // Transaction ID
+    query.extend_from_slice(&[0x01, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00]); // Flags and Counts
+    for label in domain.split('.') {
+        query.push(label.len() as u8);
+        query.extend_from_slice(label.as_bytes());
+    }
+    query.push(0); // end of domain name
+    query.extend_from_slice(&[0x00, 0x01, 0x00, 0x01]); // QType and QClass
+
+    socket.send(&query).await?;
+
+    // Receive the DNS response
+    let mut response = [0u8; 512];
+    let _ = socket.recv(&mut response).await?;
+
+    // Check for NXDOMAIN response
+    // The RCODE is the last four bits of the second byte of the flags section
+    // which itself is the second and third bytes of the response
+    let rcode = response[3] & 0x0F;
+    if rcode == 3 {
+        // NXDOMAIN
+        return Err("NXDOMAIN: The domain name does not exist.".into());
+    }
+
+    let ip_start = 14 + (domain.len() + 2) + 4 + 10; // Skip to the answer part
+    let ip_address = Ipv4Addr::new(
+        response[ip_start],
+        response[ip_start + 1],
+        response[ip_start + 2],
+        response[ip_start + 3],
+    );
+    Ok(ip_address)
+}
+```
+
+This function is pretty much identical to the `query_authoritative_server` function, except that it sends the query to the resolver instead of the authoritative server. EZ.
+
+Next we need to define some of our CLI options using `clap`:
+
+```rust
+#[derive(Parser, Debug)]
+#[clap(version = "0.1.0", author = "Conor Deegan")]
+struct Args {
+    /// Sets the method for the request
+    #[clap(short = 'X', long = "request", value_name = "METHOD", default_value = "GET")]
+    method: String,
+
+    /// Sets the HTTP request headers
+    #[clap(short = 'H', long = "header", value_name = "HEADER")]
+    headers: Vec<String>,
+
+    /// Sets the HTTP request body
+    #[clap(short = 'd', long = "data", value_name = "DATA")]
+    data: Option<String>,
+
+    /// Sets the endpoint to request
+    #[clap(value_name = "ENDPOINT")]
+    endpoint: String,
+}
+```
+
+This is all fairly standard if you are used to curl. Hopefully it all makes sense.
+
+We will need two util functions. One to extract the domain from the endpoint and another to replace the domain with the IP address in the endpoint:
+
+```rust
+fn extract_host(url_str: &str) -> Result<String, &'static str> {
+    let url = Url::parse(url_str).map_err(|_| "Failed to parse URL")?;
+    url.host_str().map(|s| s.to_string()).ok_or("URL does not contain a host")
+}
+
+fn replace_host_with_ip(url_str: &str, ip: Ipv4Addr) -> String {
+    let mut url = Url::parse(url_str).unwrap();
+    url.set_host(Some(ip.to_string().as_str())).unwrap();
+    url.to_string()
+}
+```
+
+These are kind of boring.
+
+No we can write our final function of this whole post.
+
+```rust
+#[tokio::main]
+async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    let args: Args = Args::parse();
+
+    // Extract the host from the URL
+    let host = extract_host(&args.endpoint)?;
+
+    // Query the DNS resolver for the IP address of the host
+    let ip = query_dns_resolver(&host).await?;
+
+    // Print the IP address
+    println!("IP Address: {}", ip);
+
+    // Handle the headers
+    let mut headers = HeaderMap::new();
+    for header in &args.headers {
+        let parts: Vec<&str> = header.splitn(2, ':').collect();
+        if parts.len() == 2 {
+            let header_name = parts[0].trim();
+            let header_value = parts[1].trim();
+
+            if let Ok(h_name) = HeaderName::from_bytes(header_name.as_bytes()) {
+                if let Ok(h_value) = HeaderValue::from_str(header_value) {
+                    headers.insert(h_name, h_value);
+                } else {
+                    eprintln!("Invalid header value: {}", header_value);
+                }
+            } else {
+                eprintln!("Invalid header name: {}", header_name);
+            }
+        }
+    }
+
+    // Send the HTTP request
+    let client = reqwest::Client::new();
+    let request = client
+        .request(Method::from_bytes(args.method.as_bytes()).unwrap(), replace_host_with_ip(&args.endpoint, ip))
+        .headers(headers.clone())
+        .body(args.data.clone().unwrap_or_default());
+
+    println!("Requesting: {}", args.endpoint);
+    println!("Method: {}", args.method);
+    println!("Headers: {:?}", headers);
+    println!("Payload: {:?}", &args.data);
+
+    let response = request.send().await?;
+
+    if response.status().is_success() {
+        let body = response.text().await?;
+        println!("Response: {}", body);
+    } else {
+        eprintln!("Error: {}", response.status());
+    }
+
+    Ok(())
+}
+```
+
+This function is pretty simple. It parses the CLI arguments, extracts the host from the endpoint, queries the DNS resolver for the IP address of the host, constructs the HTTP request, sends the request, and prints the response. Bingo bango!
+
+
+Let's test it out:
+
+We need to spin up our DNS server and resolver in 2 separate terminals using `cargo run`. I am getting sick of multiple terminals so I will look at some fancy docker-compose once I get really frustrated.
+
+Once the authoritative server and resolver are running, we can run our ingress-client:
+
+```bash
+$ cargo run http://example.com/api/v1/spells
+```
+
+Or
+
+```bash
+$ cargo run -- -X POST -H "Content-Type: application/json" -d '{"spell":"accio","purpose":"summoning"}' http://example.com/api/v1/spells
+```
+
+Both of these ...fail :)
+
+But, that was kinda expected. The logs from both the resolver and authoritative server show that the requests were received and processed correctly. The correct IP was returned, and a HTTP request was correctly crafted. The issue is pretty simple, we aren't running anything on that IP address yet. We need a web server. [That's for the next post](/posts/building-web-services-from-scratch-part-3-http-api). I am tired. I am going to bed.
+
+Peace ✌️
+
+P.S: This code is crappy, but that's kinda the point 🌶️
