@@ -88,7 +88,7 @@ I am also going to use `clap` in order to be able to pass the host & port number
 ```rust
 #[derive(Parser)]
 pub struct Config {
-    #[arg(short = 'H', long, default_value = "localhost")]
+    #[arg(short = 'H', long, default_value = "127.0.0.1")]
     pub host: String,
 
     #[arg(short, long, default_value_t = 3000)]
@@ -130,12 +130,42 @@ $ cargo run
 Test the endpoints:
 
 ```bash
-$ curl http://localhost:3000/api/spells
-$ curl http://localhost:3000/api/spells/1
-$ curl -X POST -H "Content-Type: application/json" -d '{"id": 3, "name": "Alohomora", "description": "Unlocking Charm"}' http://localhost:3000/api/spells
+$ curl http://127.0.0.1:3000/api/spells
+$ curl http://127.0.0.1:3000/api/spells/1
+$ curl -X POST -H "Content-Type: application/json" -d '{"id": 3, "name": "Alohomora", "description": "Unlocking Charm"}' http://127.0.0.1:3000/api/spells
 ```
 
-Done.
+Okay so it works if I call the server directly. However, we need to check if this works with our DNS servers created in the last post.
+
+Start the API server on port 80:
+
+```bash
+$ sudo cargo run -- --port=80
+```
+
+Note, I am using sudo here because I am binding to port 80.
+
+Once again, spin up our DNS server and resolver in 2 separate terminals using `cargo run`.
+
+Finally, we can run our ingress-client and fetch the spells:
+
+```bash
+$ cargo run http://example.com/api/spells
+```
+
+We can also get a spell by ID:
+
+```bash
+$ cargo run http://example.com/api/spells/1
+```
+
+And create a spell:
+
+```bash
+$ cargo run -- -X POST -H "Content-Type: application/json" -d '{"id": 3, "name": "Alohomora", "description": "Unlocking Charm"}' http://example.com/api/spells
+```
+
+That's pretty sick. We have a HTTP API that is being served by our handrolled DNS server, resolver, and client. Everything is working as expected.
 
 On to the Load Balancer.
 

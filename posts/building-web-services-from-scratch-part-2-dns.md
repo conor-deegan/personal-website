@@ -450,13 +450,13 @@ The ingress-client will have a very similar interface to curl, with the followin
 For example a GET request to example.com would look like this:
 
 ```bash
-$ cargo run http://example.com/api/v1/spells
+$ cargo run http://example.com/api/spells
 ```
 
 A POST request to example.com with some data would look like this:
 
 ```bash
-$ cargo run -- -X POST -H "Content-Type: application/json" -d '{"spell":"accio","purpose":"summoning"}' http://example.com/api/v1/spells
+$ cargo run -- -X POST -H "Content-Type: application/json" -d '{"id": 3, "name": "Alohomora", "description": "Unlocking Charm"}' http://example.com/api/spells
 ```
 
 Right so the first thing we need for our ingress client is a function for it to query the DNS resolver. The function will take the domain name as an argument and return the IP address. Lazy as I am, I will copy the `query_authoritative_server` function from the resolver and modify it to query the resolver instead. Copy and paste babyyyyy!
@@ -622,13 +622,13 @@ We need to spin up our DNS server and resolver in 2 separate terminals using `ca
 Once the authoritative server and resolver are running, we can run our ingress-client:
 
 ```bash
-$ cargo run http://example.com/api/v1/spells
+$ cargo run http://example.com/api/spells
 ```
 
 Or
 
 ```bash
-$ cargo run -- -X POST -H "Content-Type: application/json" -d '{"spell":"accio","purpose":"summoning"}' http://example.com/api/v1/spells
+$ cargo run -- -X POST -H "Content-Type: application/json" -d '{"id": 3, "name": "Alohomora", "description": "Unlocking Charm"}' http://example.com/api/spells
 ```
 
 Both of these ...fail :)
