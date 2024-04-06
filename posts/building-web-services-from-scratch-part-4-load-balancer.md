@@ -9,3 +9,9 @@ postNum: 11
 Recap, we now have a simple HTTP API that serves Harry Potter spells. We have tested that the API works with our DNS servers. What happens if we get a lot of requests? The server will get overloaded. How can we handle this? We can add more instances of the API and distribute the requests between them. Sounds like a job for a load balancer.
 
 The final code is available on [GitHub](https://github.com/conor-deegan/web-services).
+
+### Load Balancer
+
+In the spirit of the previous posts, I won't be explaing the code in detail, just the important parts. The load balancer is a simple round-robin load balancer. It listens for incoming requests and forwards them to the next server in the list.
+
+```rust
