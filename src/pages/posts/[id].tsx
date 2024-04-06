@@ -9,7 +9,6 @@ import {
     Text,
     UnorderedList,
     useColorMode,
-    useColorModeValue,
     VStack
 } from '@chakra-ui/react';
 import { readdirSync } from 'fs';
@@ -43,7 +42,6 @@ const Post = (props: {
     twitterPostDescription: string;
     twitterPostImage: string;
 }) => {
-    const text = useColorModeValue('brand.darkPrimary', 'brand.lightPrimary');
     const { colorMode } = useColorMode();
     if (!props.frontmatter) {
         return <></>;
@@ -161,9 +159,6 @@ const Post = (props: {
                     }
                 }}
             />
-            <Box ml={[4, 12]} mt={4} color={text} textAlign={'center'}>
-                --- E.O.F ---
-            </Box>
         </GenericPage>
     );
 };
