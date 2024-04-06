@@ -30,10 +30,10 @@ const Index = (props: {
             twitterPostImage={props.twitterPostImage}
             showBack={false}
         >
-            <Heading mt={4} mb={4} fontSize={'20px'}>
+            <Heading mb={4} fontSize={'20px'}>
                 About
             </Heading>
-            <Box maxW={'30rem'} w={'100%'}>
+            <Box>
                 <Text ml={6}>
                     I'm a Software Engineer/Architect. I have 6+ years building
                     and growing startups. I have been a founder, CTO, Head of

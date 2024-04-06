@@ -44,7 +44,6 @@ const Post = (props: {
     twitterPostImage: string;
 }) => {
     const text = useColorModeValue('brand.darkPrimary', 'brand.lightPrimary');
-    const border = useColorModeValue('brand.darkPrimary', 'brand.lightPrimary');
     const { colorMode } = useColorMode();
     if (!props.frontmatter) {
         return <></>;
@@ -58,11 +57,7 @@ const Post = (props: {
             twitterPostImage={props.twitterPostImage}
             showBack={true}
         >
-            <Flex
-                borderBottom={'0.5px solid'}
-                borderBottomColor={border}
-                pb={4}
-            >
+            <Flex pb={4}>
                 <Heading fontWeight={'bold'} fontSize={'22px'}>
                     {props.frontmatter.title}
                 </Heading>

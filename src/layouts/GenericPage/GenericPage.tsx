@@ -53,7 +53,7 @@ const GenericPage = ({
             >
                 <Flex
                     flexDirection={'column'}
-                    w={['90%', '40%']}
+                    w={['90%', '50%']}
                     margin={'auto'}
                     h={'100%'}
                     minH={'100vh'}

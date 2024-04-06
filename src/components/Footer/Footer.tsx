@@ -13,7 +13,7 @@ const Footer = ({ showBack }: { showBack: boolean }) => {
         >
             {showBack && (
                 <>
-                    <Box ml={[4, 12]}>
+                    <Box>
                         ← <Link href="/">Back</Link>
                     </Box>
                 </>

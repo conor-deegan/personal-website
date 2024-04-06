@@ -1,6 +1,7 @@
 import '@fontsource/inter';
 import '@fontsource/ubuntu-mono/400.css';
 import '@fontsource/ubuntu-mono/700.css';
+import '@fontsource-variable/fraunces';
 
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import type { AppProps } from 'next/app';
@@ -48,7 +49,7 @@ const customTheme = extendTheme({
     },
     fonts: {
         body: 'Inter, sans-serif',
-        heading: 'Inter, sans-serif',
+        heading: 'Fraunces Variable',
         mono: 'Ubuntu Mono, monospace'
     },
     colors
