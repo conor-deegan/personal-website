@@ -20,7 +20,7 @@ Edit: this post ended up being quite long. I wasn't bothered to split it out but
 - I'm going to build a simple DNS client (however, I will call this application the ingress-client, which will make sense later) to test the server.
 - I am going to build a **very** simple DNS resolver which is responsible for querying the authoritative DNS server for a specific domain and caching the results for a specific TTL and then returning the IP address to the client.
 - For now, the DNS server will only support A records. I may add support for MX records in the future.
-- I am absolutely not going to write about a whole lot about the DNS protocol in detail, Google will do a much better job at that than me (this applies to almost every web service I will build).
+- I am absolutely not going to write a whole lot about the DNS protocol in detail, Google will do a much better job at that than me (this applies to almost every web service I will build).
 
 ### WTF is DNS?
 
@@ -301,7 +301,7 @@ The last function we need to create, apart from the main function, is a function
 ```rust
 async fn query_authoritative_server(domain: &str) -> Result<(Ipv4Addr, u32), Box<dyn Error>> {
     // Connect to the authoritative DNS server
-    let server_addr = "0.0.0.0:53";
+    let server_addr = "dns-server:53";
     let socket = UdpSocket::bind("0.0.0.0:0").await?;
     socket.connect(server_addr).await?;
 
@@ -415,16 +415,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 DONE 🤝. We can test the resolver and authoritative server together:
 
-Run both the resolver and authoritative server in separate terminals using `cargo run`.
+Comment out all services in the docker-compose.yml file except the resolver and authoritative server. Run `docker-compose up` to build and start the services.
 
 We can then use the `dig` or `nslookup` command to query the resolver:
 
 ```bash
-$ nslookup example.com 0.0.0.0 -port=5354
+$ dig @127.0.0.1 -p 5354 example.com
 ```
 
 ```bash
-$ nslookup example.com 0.0.0.0 -port=5354
+$ nslookup example.com 127.0.0.1 -port=5354
 ```
 
 All going well, the commands should return the IP adddress of example.com: 0.0.0.0 and the TTL of example.com: 3600. You will notice that the first query will be a cache miss, and the second query will be a cache hit! It works!
@@ -465,8 +465,8 @@ Right so the first thing we need for our ingress client is a function for it to 
 // Query the DNS resolver for the IP address of a domain
 async fn query_dns_resolver(domain: &str) -> Result<Ipv4Addr, Box<dyn Error>> {
     // Connect to the DNS resolver
-    let resolver_addr = "0.0.0.0:5354";
-    let socket = UdpSocket::bind("0.0.0.0:0").await?;
+    let resolver_addr = "127.0.0.1:5354";
+    let socket = UdpSocket::bind("127.0.0.1:0").await?;
     socket.connect(resolver_addr).await?;
 
     // Construct the DNS query message
@@ -612,14 +612,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 }
 ```
 
-This function is pretty simple. It parses the CLI arguments, extracts the host from the endpoint, queries the DNS resolver for the IP address of the host, constructs the HTTP request, sends the request, and prints the response. Bingo bango!
+This function is pretty simple. It parses the CLI arguments, extracts the host from the endpoint, queries the DNS resolver for the IP address of the host, constructs the HTTP request, sends the request, and prints the response. Bingo bongo!
 
+### Let's test it out
 
-Let's test it out:
+Note, the ingress-client is the only service that will be running outside of Docker as technically it is not part of our "cloud". It is just a client that will be used to test our services.
 
-We need to spin up our DNS server and resolver in 2 separate terminals using `cargo run`. I am getting sick of multiple terminals so I will look at some fancy docker-compose once I get really frustrated.
+We need to spin up our DNS server and resolver using `docker-compose up`:
 
-Once the authoritative server and resolver are running, we can run our ingress-client:
+Once the authoritative server and resolver are running, we can run our ingress-client in a separate terminal window. We can test it with the following command:
 
 ```bash
 $ cargo run http://example.com/api/spells
@@ -631,7 +632,7 @@ Or
 $ cargo run -- -X POST -H "Content-Type: application/json" -d '{"id": 3, "name": "Alohomora", "description": "Unlocking Charm"}' http://example.com/api/spells
 ```
 
-Both of these ...fail :)
+Both of these...fail :)
 
 But, that was kinda expected. The logs from both the resolver and authoritative server show that the requests were received and processed correctly. The correct IP was returned, and a HTTP request was correctly crafted. The issue is pretty simple, we aren't running anything on that IP address yet. We need a web server. [That's for the next post](/posts/building-web-services-from-scratch-part-3-http-api). I am tired. I am going to bed.
 

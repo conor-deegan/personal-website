@@ -35,3 +35,14 @@ I plan to document my progress with this mini series of posts. Feel free to foll
 - I won't be explaining much theory, these services are all pretty self-explanatory and there are plenty of resources online that explain how they work. I will focus on the implementation.
 
 Right, let's get started. I am going to start with the DNS set up. I have pretty much no idea how DNS *actually* works (something something port 53) so this should be fun...
+
+
+### Wait
+
+This is an edit. This gets out of hand real quick without some sort of container management. So I am going to use Docker and docker-compose.
+
+The Dockerfiles for each binary are very simple as I don't really care about container size or building the binary for production. I just want to be able to run the services in a container. There is also a .dockerignore file to ignore the target directory when building the image. Finally, there is also a docker-compose.yml file in the root of the project that will build and run all the services.
+
+Simply run `docker-compose up` to build and run all the services. I make this clear in each subsequent post but I thought I would mention it here too.
+
+Okay, now let's get started.
