@@ -6,11 +6,11 @@ postNum: 8
 
 ### What and why on earth would this be useful or a good idea?
 
-I have this terrible idea to try to build a selection of web services from scratch. I have no idea how I am going to accomplish this yet, but I think it will be a good learning experience. I have a few reasons for this:
+I have this terrible idea to try to build a selection of web services from scratch. I have a few reasons for this:
 
 1. So much of modern web development is build on top of abstractions that we don't need to fully understand in order to use them. I want to look under the hood.
 2. I want to understand how the these services work at a lower level and from first principles.
-3. It *think* it will be a fun challenge (I will more than likely regret this).
+3. I *think* it will be a fun challenge (I will more than likely regret this).
 4. I want to improve my Rust skills.
 5. I throughly enjoy banging my head against a wall.
 

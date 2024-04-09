@@ -74,7 +74,7 @@ async fn check_targets_health(target_health: Arc<Mutex<HashMap<Targets, bool>>>,
 }
 ```
 
-Yeap I know I know, unwrap. I'm sorry. this function sends a GET request to the health check endpoint of each target and updates the health status in the `target_health` map. The `target_health` map is a `Arc<Mutex<HashMap<Targets, bool>>>`. The `Arc` is used to share the map between threads and the `Mutex` is used to ensure only one thread can access the map at a time. This is important because we are updating the map from multiple threads. For me, it was a great example of where Rust can slow you down initially but once you understand it, the benefits are clear.
+Yeap I know I know, unwrap. I'm sorry. This function sends a GET request to the health check endpoint of each target and updates the health status in the `target_health` map. The `target_health` map is a `Arc<Mutex<HashMap<Targets, bool>>>`. The `Arc` is used to share the map between threads and the `Mutex` is used to ensure only one thread can access the map at a time. This is important because we are updating the map from multiple threads. For me, it was a great example of where Rust can slow you down initially but once you understand it, the benefits are clear.
 
 The next function isn't really needed but it's used to write a response back to the client if there are no healthy targets.
 
