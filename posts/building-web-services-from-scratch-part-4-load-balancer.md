@@ -208,7 +208,7 @@ $ docker-compose start http-api-2
 
 If we shut off both targets, the load balancer will return a 503 error to the client.
 
-Fuck me that's cool! The flow of the end-2-end request is as follows:
+The flow of the end-2-end request is as follows:
 
 1. HTTP/DNS client sends a request to the DNS resolver for the IP of the domain.
 2. The DNS resolver checks it's cache for the IP of the domain.
