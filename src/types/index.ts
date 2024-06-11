@@ -4,5 +4,6 @@ export interface IPostData {
         author: string;
         title: string;
         postNum: number;
+        ready: boolean;
     };
 }

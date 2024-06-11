@@ -10,9 +10,14 @@ export const PostList = ({ posts }: { posts: IPostData[] }) => {
             {posts.map(({ id, data }, i) => (
                 <HStack key={i}>
                     <Text>{data.postNum}:</Text>
-                    <Link href={`/posts/${id}`}>
-                        <Text color={link}>{data.title}</Text>
-                    </Link>
+                    {data.ready !== false && (
+                        <Link href={`/posts/${id}`}>
+                            <Text color={link}>{data.title}</Text>
+                        </Link>
+                    )}
+                    {data.ready === false && (
+                        <Text color={'grey'}>WIP: {data.title}</Text>
+                    )}
                 </HStack>
             ))}
         </VStack>

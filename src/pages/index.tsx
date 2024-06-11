@@ -38,9 +38,9 @@ const Index = (props: {
                     I'm a Software Engineer/Architect. I have 6+ years building
                     and growing startups. I have been a founder, CTO, Head of
                     Engineering, and Head of Product. I also have an MSc in
-                    Computer Science where I focused on Distributed Systems and
-                    AI. The purpose of this site is to document stuff that I
-                    would normally keep in a private note/repo for reference.
+                    Distributed Systems and AI. The purpose of this site is to
+                    document stuff that I would normally keep in a private note
+                    for reference.
                 </Text>
             </Box>
             <Heading mt={4} mb={4} fontSize={'20px'}>
