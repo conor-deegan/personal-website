@@ -35,8 +35,9 @@ const Index = (props: {
             </Heading>
             <Box>
                 <Text ml={6}>
-                    I'm a Software Engineer/Architect. I have 6+ years building
-                    and growing startups. I have been a founder, CTO, Head of
+                    I'm a Software Engineer/Architect. I have{' '}
+                    {new Date().getFullYear() - 2016}+ years building and
+                    growing startups. I have been a founder, CTO, Head of
                     Engineering, and Head of Product. I also have an MSc in
                     Distributed Systems and AI. The purpose of this site is to
                     document stuff that I would normally keep in a private note
