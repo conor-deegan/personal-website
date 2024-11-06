@@ -161,4 +161,4 @@ That is almost a 60% reduction in response time. Not bad for a simple in-memory 
 
 ### Conclusion
 
-With caching in place, it's time to move on to object storage.
+With caching in place, it's time to move on to a message queue.
