@@ -2,6 +2,7 @@
 title: "Elliptic Curve Cryptography"
 author: "Conor Deegan"
 postNum: 2
+type: "post"
 ---
 
 ### Introduction

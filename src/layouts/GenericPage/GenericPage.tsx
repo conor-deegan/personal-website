@@ -45,7 +45,6 @@ const GenericPage = ({
                 <meta name="twitter:image" content={twitterPostImage}></meta>
             </Head>
             <Flex
-                w={'100vw'}
                 backgroundAttachment={'fixed'}
                 backgroundImage={'url(/noise.png)'}
                 backgroundRepeat={'repeat'}
@@ -59,7 +58,7 @@ const GenericPage = ({
                     minH={'100vh'}
                     color={text}
                     textColor={'text'}
-                    fontSize={'16px'}
+                    fontSize={'18px'}
                 >
                     <Header showBack={showBack} />
                     {children}

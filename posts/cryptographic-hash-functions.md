@@ -2,6 +2,7 @@
 title: "Cryptographic Hash Functions"
 author: "Conor Deegan"
 postNum: 1
+type: "post"
 ---
 
 ### Introduction

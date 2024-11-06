@@ -2,6 +2,7 @@
 title: "RSA"
 author: "Conor Deegan"
 postNum: 6
+type: "post"
 ---
 
 ### Introduction

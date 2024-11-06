@@ -2,6 +2,7 @@
 title: "Building Web Services from Scratch: Part 1 - Intro"
 author: "Conor Deegan"
 postNum: 8
+type: "post"
 ---
 
 ### What and why on earth would this be useful or a good idea?
@@ -30,11 +31,11 @@ I plan to document my progress with this mini series of posts. Feel free to foll
 ### Rules of engagement
 
 - I want to try to keep this as simple as possible.
-- I plan to use Rust or Typescript for almost everything.
+- I plan to use Rust or Typescript for almost everything (there may be some bash scripting and Docker involved).
 - I will try to avoid using any libraries that do the heavy lifting for me however I want to focus on the core functionality of the services so I may cheat a little.
 - I won't be explaining much theory, these services are all pretty self-explanatory and there are plenty of resources online that explain how they work. I will focus on the implementation.
 
-Right, let's get started. I am going to start with the DNS set up. I have pretty much no idea how DNS *actually* works (something something port 53) so this should be fun...
+Right, let's get started. I am going to start with the DNS set up. I have pretty much no idea how DNS *actually* works (something about port 53) so this should be fun...
 
 
 ### Wait

@@ -2,6 +2,7 @@
 title: "The Birthday Paradox"
 author: "Conor Deegan"
 postNum: 4
+type: "post"
 ---
 
 ### Introduction

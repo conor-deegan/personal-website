@@ -1,7 +1,8 @@
 ---
-title: "Building Web Services from Scratch: Part 4 - Load Balancer"
+title: "BWSS: Part 4 - Load Balancer"
 author: "Conor Deegan"
 postNum: 11
+type: "post"
 ---
 
 ### Introduction
@@ -237,5 +238,3 @@ Hmm, despite the POST request succeeding, the GET request is returning only the 
 Run the GET request again and you will notice it now seems to be "working". The request was round-robined to the backend that has the new spell in it's in-memory data structure.
 
 This is why we need to have a shared state between the backends. Time to build a database.
-
-Peace 🤘

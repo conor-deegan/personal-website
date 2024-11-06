@@ -1,7 +1,8 @@
 ---
-title: "Building Web Services from Scratch: Part 2 - DNS"
+title: "BWSS: Part 2 - DNS"
 author: "Conor Deegan"
 postNum: 9
+type: "post"
 ---
 
 ### Introduction
@@ -98,7 +99,7 @@ This function is simple. It reads the domain zone file line by line, parses each
 
 Next, we need a function to create a DNS response packet. This function takes the transaction ID, domain name, IP address, and TTL as input and returns a byte array representing the DNS response packet.
 
-Note: The DNS response packet is a binary format that follows the DNS protocol. The format is well-defined and consists of various fields such as transaction ID, flags, questions, answer RRs (resource records), authority RRs, and additional RRs. The response packet is constructed by concatenating these fields in the correct order. The transaction ID is used to match the response to the original query. I have no intention of explaining the DNS protocol in detail, so I will leave it at that. I also have no shame in admitting that I used ChatGPT to help me with this function 🤖.
+Note: The DNS response packet is a binary format that follows the DNS protocol. The format is well-defined and consists of various fields such as transaction ID, flags, questions, answer RRs (resource records), authority RRs, and additional RRs. The response packet is constructed by concatenating these fields in the correct order. The transaction ID is used to match the response to the original query. I have no intention of explaining the DNS protocol in detail, so I will leave it at that.
 
 ```rust
 fn create_dns_response(transaction_id: [u8; 2], domain: &str, ip_address: Ipv4Addr, ttl: u32) -> Vec<u8> {
@@ -459,7 +460,7 @@ A POST request to example.com with some data would look like this:
 $ cargo run -- -X POST -H "Content-Type: application/json" -d '{"id": 3, "name": "Alohomora", "description": "Unlocking Charm"}' http://example.com/api/spells
 ```
 
-Right so the first thing we need for our ingress client is a function for it to query the DNS resolver. The function will take the domain name as an argument and return the IP address. Lazy as I am, I will copy the `query_authoritative_server` function from the resolver and modify it to query the resolver instead. Copy and paste babyyyyy!
+Right so the first thing we need for our ingress client is a function for it to query the DNS resolver. The function will take the domain name as an argument and return the IP address. Lazy as I am, I will copy the `query_authoritative_server` function from the resolver and modify it to query the resolver instead.
 
 ```rust
 // Query the DNS resolver for the IP address of a domain
@@ -506,7 +507,7 @@ async fn query_dns_resolver(domain: &str) -> Result<Ipv4Addr, Box<dyn Error>> {
 }
 ```
 
-This function is pretty much identical to the `query_authoritative_server` function, except that it sends the query to the resolver instead of the authoritative server. EZ.
+This function is pretty much identical to the `query_authoritative_server` function, except that it sends the query to the resolver instead of the authoritative server.
 
 Next we need to define some of our CLI options using `clap`:
 
@@ -634,8 +635,6 @@ $ cargo run -- -X POST -H "Content-Type: application/json" -d '{"id": 3, "name":
 
 Both of these...fail :)
 
-But, that was kinda expected. The logs from both the resolver and authoritative server show that the requests were received and processed correctly. The correct IP was returned, and a HTTP request was correctly crafted. The issue is pretty simple, we aren't running anything on that IP address yet. We need a web server. [That's for the next post](/posts/building-web-services-from-scratch-part-3-http-api). I am tired. I am going to bed.
-
-Peace ✌️
+But, that was kinda expected. The logs from both the resolver and authoritative server show that the requests were received and processed correctly. The correct IP was returned, and a HTTP request was correctly crafted. The issue is pretty simple, we aren't running anything on that IP address yet. We need a web server. [That's for the next post](/posts/building-web-services-from-scratch-part-3-http-api).
 
 P.S: This code is crappy, but that's kinda the point 🌶️

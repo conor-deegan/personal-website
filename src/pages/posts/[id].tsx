@@ -56,7 +56,7 @@ const Post = (props: {
             showBack={true}
         >
             <Flex pb={4}>
-                <Heading fontWeight={'bold'} fontSize={'22px'}>
+                <Heading fontWeight={'bold'} fontSize={'22px'} mt={4}>
                     {props.frontmatter.title}
                 </Heading>
             </Flex>
@@ -84,11 +84,20 @@ const Post = (props: {
                             );
                         }
                         return (
-                            <Box mt={4} mb={4} ml={4} mr={4}>
+                            <Box mt={4} mb={4}>
                                 <Code
                                     p={4}
                                     width={'100%'}
-                                    overflow={'scroll'}
+                                    overflowX={'auto'}
+                                    overflowY={'hidden'}
+                                    fontSize={'16px'}
+                                    border={'0.5px solid'}
+                                    borderColor={
+                                        colorMode === 'light'
+                                            ? 'blackAlpha.400'
+                                            : 'whiteAlpha.400'
+                                    }
+                                    borderRadius={8}
                                     colorScheme={
                                         colorMode === 'light'
                                             ? 'blackAlpha'
@@ -107,11 +116,7 @@ const Post = (props: {
                     h5: StyledHeading,
                     h6: StyledHeading,
                     p: (props) => {
-                        return (
-                            <Text lineHeight={2} ml={6}>
-                                {props.children}
-                            </Text>
-                        );
+                        return <Text lineHeight={2}>{props.children}</Text>;
                     },
                     img: (props) => {
                         return (
@@ -145,14 +150,14 @@ const Post = (props: {
                     },
                     ol: (props) => {
                         return (
-                            <OrderedList ml={12} mt={4} mb={4} lineHeight={2}>
+                            <OrderedList ml={6} mt={4} mb={4} lineHeight={2}>
                                 {props.children}
                             </OrderedList>
                         );
                     },
                     ul: (props) => {
                         return (
-                            <UnorderedList ml={12} mt={4} mb={4} lineHeight={2}>
+                            <UnorderedList ml={6} mt={4} mb={4} lineHeight={2}>
                                 {props.children}
                             </UnorderedList>
                         );

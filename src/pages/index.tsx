@@ -34,26 +34,55 @@ const Index = (props: {
                 About
             </Heading>
             <Box>
-                <Text ml={6}>
-                    I'm a Software Engineer/Architect. I have{' '}
+                <Text>
+                    I'm a Software/Platform Engineer. I have{' '}
                     {new Date().getFullYear() - 2016}+ years building and
-                    growing startups. I have been a founder, CTO, Head of
-                    Engineering, and Head of Product. I also have an MSc in
-                    Distributed Systems and AI. The purpose of this site is to
-                    document stuff that I would normally keep in a private note
-                    for reference.
+                    growing startups and did big company stuff before that. I
+                    have been a founder, CTO, Head of Engineering, and Head of
+                    Product. I also hold an MSc in Distributed Systems and AI.
                 </Text>
             </Box>
             <Heading mt={4} mb={4} fontSize={'20px'}>
                 Posts
             </Heading>
-            <Box ml={6}>
-                <PostList posts={props.posts} />
-            </Box>
+            <PostList
+                posts={props.posts.filter((post) => post.data.type === 'post')}
+            />
+            <Heading mt={4} mb={4} fontSize={'20px'}>
+                Notes
+            </Heading>
+            <PostList
+                posts={props.posts.filter((post) => post.data.type === 'note')}
+            />
+            <Heading mt={4} mb={4} fontSize={'20px'}>
+                Research
+            </Heading>
+            <VStack align={'left'}>
+                <Text>
+                    State of Web Scale Agent AI:{' '}
+                    <Link
+                        href={'/papers/state-of-web-scale-agents.pdf'}
+                        color={link}
+                        target={'_blank'}
+                    >
+                        Link
+                    </Link>
+                </Text>
+                <Text>
+                    Achieving Web Scale Agent AI:{' '}
+                    <Link
+                        href={'/papers/web-scale-agents.pdf'}
+                        color={link}
+                        target={'_blank'}
+                    >
+                        Link
+                    </Link>
+                </Text>
+            </VStack>
             <Heading mt={4} mb={4} fontSize={'20px'}>
                 Contact
             </Heading>
-            <VStack align={'left'} pl={6}>
+            <VStack align={'left'}>
                 <Text>
                     Email:{' '}
                     <Link
@@ -90,7 +119,7 @@ const Index = (props: {
             <Heading mt={4} mb={4} fontSize={'20px'}>
                 Source Code
             </Heading>
-            <VStack align={'left'} pl={6}>
+            <VStack align={'left'}>
                 <Text>
                     Github:{' '}
                     <Link

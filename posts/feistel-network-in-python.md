@@ -2,6 +2,7 @@
 title: "Feistel Network in Python"
 author: "Conor Deegan"
 postNum: 3
+type: "post"
 ---
 
 ### Introduction

@@ -2,6 +2,7 @@
 title: "Unicity Distance (OTP)"
 author: "Conor Deegan"
 postNum: 7
+type: "post"
 ---
 
 ### Introduction

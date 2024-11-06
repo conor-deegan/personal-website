@@ -5,5 +5,6 @@ export interface IPostData {
         title: string;
         postNum: number;
         ready: boolean;
+        type: 'post' | 'note';
     };
 }

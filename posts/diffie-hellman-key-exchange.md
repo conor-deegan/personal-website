@@ -2,6 +2,7 @@
 title: "Diffie–Hellman key exchange"
 author: "Conor Deegan"
 postNum: 5
+type: "post"
 ---
 
 ### Introduction

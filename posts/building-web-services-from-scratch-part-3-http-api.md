@@ -1,7 +1,8 @@
 ---
-title: "Building Web Services from Scratch: Part 3 - HTTP API"
+title: "BWSS: Part 3 - HTTP API"
 author: "Conor Deegan"
 postNum: 10
+type: "post"
 ---
 
 ### Introduction
@@ -139,5 +140,3 @@ $ curl -X POST -H "Content-Type: application/json" -d '{"id": 3, "name": "Alohom
 Okay so it works if I call the server directly. However, we need to check if this works with our DNS servers created in the last post. Before we do some wasted work, let's move on to the next post.
 
 On to the Load Balancer.
-
-Peace ✌️
