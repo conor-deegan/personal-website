@@ -1,7 +1,7 @@
 ---
-title: "BWSS: Part 8 - Object Storage"
+title: "BWSS: Part 10 - SMTP Server"
 author: "Conor Deegan"
-postNum: 15
+postNum: 17
 ready: false
 type: "post"
 ---
