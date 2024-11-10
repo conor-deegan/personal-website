@@ -165,7 +165,7 @@ cargo run -- -X POST -f src/lumos.jpeg http://example.com/files/put -F file_name
 
 We will make a decision that the `file_name` field will be set to the `spell_id` of any spell. This way we can now add images to our spells!
 
-After running the command above, we can now see the image uploaded to the server disj storage within the docker container. Although, lets make sure the `get` endpoint works as expected.
+After running the command above, we can now see the image uploaded to the server disk storage within the docker container. Although, lets make sure the `get` endpoint works as expected.
 
 ```bash
 cargo run -- -X GET http://example.com/files/get/1
