@@ -25,8 +25,9 @@ I plan to document my progress with this mini series of posts. Feel free to foll
 - Persistent row oriented data store: [here](/posts/building-web-services-from-scratch-part-5-data-store)
 - Key-value in-memory cache store: [here](/posts/building-web-services-from-scratch-part-6-cache-store)
 - Message queue: [here](/posts/building-web-services-from-scratch-part-7-message-queue)
-- Object storage with support for GET and PUT: [here](/posts/building-web-services-from-scratch-part-8-object-storage)
-- SMTP server: [here](/posts/building-web-services-from-scratch-part-9-smtp-server)
+- Microserivce architecture with path based routing: [here](/posts/building-web-services-from-scratch-part-8-microservices)
+- Object storage with support for GET and PUT: [here](/posts/building-web-services-from-scratch-part-9-object-storage)
+- Conclusion: [here](/posts/building-web-services-from-scratch-part-10-conclusion)
 
 ### Rules of engagement
 
