@@ -17,7 +17,7 @@ The object storage service is realised as an Express HTTP server that stores fil
 
 The service exposes two routes, `/put` and `/get`.
 
-The `put` method will make sure of `multer` to handle file uploads. The file will be stored on disk in a directory called `uploads`.
+The `put` method will make use of `multer` to handle file uploads. The file will be stored on disk in a directory called `uploads`.
 
 ```javascript
 // Multer config

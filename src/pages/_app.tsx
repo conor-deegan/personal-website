@@ -4,6 +4,7 @@ import '@fontsource/ubuntu-mono/700.css';
 import '@fontsource-variable/fraunces';
 
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
+import { Analytics } from '@vercel/analytics/react';
 import type { AppProps } from 'next/app';
 
 interface IGlobalStylesProps {
@@ -63,6 +64,7 @@ const App = ({ Component, pageProps }: AppProps) => {
             <main>
                 <ChakraProvider theme={theme}>
                     <Component {...pageProps} />
+                    <Analytics />
                 </ChakraProvider>
             </main>
         </>
