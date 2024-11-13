@@ -4,7 +4,8 @@ import {
     FormErrorMessage,
     FormLabel,
     Input,
-    Text
+    Text,
+    useColorModeValue
 } from '@chakra-ui/react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
@@ -14,6 +15,7 @@ type FormValues = {
 };
 
 function SubsribeForm() {
+    const button = useColorModeValue('blackAlpha', 'gray');
     const [isSubscribed, setIsSubscribed] = useState(false);
     const {
         register,
@@ -61,7 +63,7 @@ function SubsribeForm() {
                 </FormErrorMessage>
             </FormControl>
             <Button
-                colorScheme={'gray'}
+                colorScheme={button}
                 mt={4}
                 isLoading={isSubmitting}
                 type="submit"
