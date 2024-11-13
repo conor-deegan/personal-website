@@ -20,6 +20,7 @@ import { HeadingProps } from 'react-markdown/lib/ast-to-react';
 import rehypeKatex from 'rehype-katex';
 import remarkMath from 'remark-math';
 
+import SubscribeForm from '../../components/SubscribeForm/SubsribeForm';
 import GenericPage from '../../layouts/GenericPage/GenericPage';
 
 const StyledHeading = (props: HeadingProps) => {
@@ -164,6 +165,10 @@ const Post = (props: {
                     }
                 }}
             />
+            <Heading mt={4} mb={4} fontSize={'20px'}>
+                Subscribe
+            </Heading>
+            <SubscribeForm />
         </GenericPage>
     );
 };

@@ -9,6 +9,7 @@ import {
 import matter from 'gray-matter';
 
 import { PostList } from '../components/PostsList/PostList';
+import SubscribeForm from '../components/SubscribeForm/SubsribeForm';
 import GenericPage from '../layouts/GenericPage/GenericPage';
 import { IPostData } from '../types';
 
@@ -79,6 +80,10 @@ const Index = (props: {
                     </Link>
                 </Text>
             </VStack>
+            <Heading mt={4} mb={4} fontSize={'20px'}>
+                Subscribe
+            </Heading>
+            <SubscribeForm />
             <Heading mt={4} mb={4} fontSize={'20px'}>
                 Contact
             </Heading>
