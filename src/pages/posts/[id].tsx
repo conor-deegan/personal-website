@@ -1,5 +1,6 @@
 import 'katex/dist/katex.min.css';
 
+import { AtpAgent } from '@atproto/api';
 import {
     Box,
     Code,
@@ -14,7 +15,9 @@ import {
 import { readdirSync } from 'fs';
 import matter from 'gray-matter';
 import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import path from 'path';
+import { useEffect, useState } from 'react';
 import ReactMarkdown from 'react-markdown';
 import { HeadingProps } from 'react-markdown/lib/ast-to-react';
 import rehypeKatex from 'rehype-katex';
@@ -22,6 +25,18 @@ import remarkMath from 'remark-math';
 
 import SubscribeForm from '../../components/SubscribeForm/SubsribeForm';
 import GenericPage from '../../layouts/GenericPage/GenericPage';
+
+interface IReply {
+    post: {
+        author: {
+            displayName: string;
+            handle: string;
+        };
+        record: {
+            text: string;
+        };
+    };
+}
 
 const StyledHeading = (props: HeadingProps) => {
     return (
@@ -43,10 +58,45 @@ const Post = (props: {
     twitterPostDescription: string;
     twitterPostImage: string;
 }) => {
+    const [replies, setReplies] = useState<IReply[]>([]);
+    const [postExternalLink, setPostExternalLink] = useState<string>('');
     const { colorMode } = useColorMode();
     if (!props.frontmatter) {
         return <></>;
     }
+
+    const pathname = usePathname();
+    const agent = new AtpAgent({ service: 'https://public.api.bsky.app' });
+
+    useEffect(() => {
+        const load = async () => {
+            const did = 'did:plc:w5zebdsy36zhbufep2bqzg67';
+            const post = await agent.app.bsky.feed.searchPosts({
+                q: 'www.conordeegan.dev',
+                author: did,
+                url: `https://conordeegan.dev${pathname}`
+            });
+            if (post.data.posts.length === 0) {
+                return;
+            }
+            const postUri = post.data.posts[0].uri;
+            const postThread = await agent.getPostThread({
+                uri: postUri
+            });
+            if (!postThread.data || !postThread.data.thread) {
+                return;
+            }
+            const fetchedReplies = postThread.data.thread.replies as IReply[];
+            setReplies(fetchedReplies);
+            setPostExternalLink(
+                `https://bsky.app/profile/${did}/post/${
+                    postUri.split('/')[postUri.split('/').length - 1]
+                }`
+            );
+        };
+        load();
+    }, []);
+
     return (
         <GenericPage
             title={`Conor Deegan | ${props.frontmatter.title}`}
@@ -169,6 +219,57 @@ const Post = (props: {
                 Subscribe
             </Heading>
             <SubscribeForm />
+            {postExternalLink !== '' && (
+                <>
+                    <Heading mt={8} mb={2} fontSize={'20px'}>
+                        Replies
+                    </Heading>
+                    <Text>
+                        Replies are pulled directly from the post on BlueSky.
+                        Add your reply{' '}
+                        <Link
+                            href={postExternalLink}
+                            target={'_blank'}
+                            style={{
+                                textDecoration: 'underline',
+                                color:
+                                    colorMode === 'light'
+                                        ? '#0000EE'
+                                        : '#69b9ff'
+                            }}
+                        >
+                            here
+                        </Link>
+                        . Or if you are interested to see how this works, see
+                        the note{' '}
+                        <Link
+                            href={'/posts/comments'}
+                            style={{
+                                textDecoration: 'underline',
+                                color:
+                                    colorMode === 'light'
+                                        ? '#0000EE'
+                                        : '#69b9ff'
+                            }}
+                        >
+                            here
+                        </Link>
+                        .
+                    </Text>
+                    <Box>
+                        {replies.map((reply, index) => {
+                            return (
+                                <Box key={index} mt={4} mb={4}>
+                                    <Text fontWeight={'bold'}>
+                                        {reply.post.author.displayName}
+                                    </Text>
+                                    <Text>{reply.post.record.text}</Text>
+                                </Box>
+                            );
+                        })}
+                    </Box>
+                </>
+            )}
         </GenericPage>
     );
 };
