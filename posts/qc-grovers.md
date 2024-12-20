@@ -8,7 +8,7 @@ type: "post"
 So far, we’ve talked about Shor’s algorithm, which cracks tough problems like factoring and the discrete logarithm problem by exploiting hidden periodic structures. But what if your problem really is just “finding a needle in a haystack,” with no obvious underlying pattern to latch onto? In other words, what if you need to search through an unstructured list of possibilities to find the one correct answer?
 \
 \
-Classically, this is as bad as it sounds: if you have $N$ possibilities, you might have to check them one by one, taking $O(N)$ steps on average. Grover’s algorithm, can solve this kind of “unstructured search” in  $O(\sqrt{N})$  steps. That’s not the exponential speedup you get with Shor’s algorithm, but it’s still an enormous gain when $N$ is large. After all, the square root of a huge number is significantly smaller than the number itself.
+Classically, this is as bad as it sounds: if you have $N$ possibilities, you might have to check them one by one, taking $O(N)$ steps on average. Grover’s algorithm, can solve this kind of “unstructured search” in  $O(\sqrt{N})$  steps. That’s not the superpolynomial speedup you get with Shor’s algorithm, but it’s still an enormous gain when $N$ is large. After all, the square root of a huge number is significantly smaller than the number itself.
 \
 \
 Just like with Shor’s algorithm, let’s get one misunderstanding out of the way. Grover’s algorithm doesn’t let you magically solve all search problems instantly. You don’t just prepare a superposition of all $N$ items and measure to get the solution. If you tried that, you’d just get a random guess — effectively useless. Instead, Grover’s algorithm cleverly uses quantum superposition and interference to “amplify” the correct solution, making it stand out from the crowd.
@@ -48,8 +48,12 @@ This phase flip might seem like a small, insignificant change, but it’s the ke
 \
 \
 Once you have the oracle, Grover’s algorithm applies a sequence of steps often called “Grover iterations.” Each iteration does two main things:
-1. Phase Flip with the Oracle: You apply the oracle to the current superposition. This changes the sign of the amplitude associated with the target state, leaving all other states unchanged.
-2. Invert About the Mean (Diffusion Step): Next, you perform a “diffusion” or “inversion about the average” step. This operation effectively takes the new amplitudes and reflects them about their average value. You can think of this as a geometric transformation on the amplitudes, pulling the target state’s amplitude upward while pushing the others downward.
+\
+\
+Step 1 - Phase Flip with the Oracle: You apply the oracle to the current superposition. This changes the sign of the amplitude associated with the target state, leaving all other states unchanged.
+\
+\
+Step 2 - Invert About the Mean (Diffusion Step): Next, you perform a “diffusion” or “inversion about the average” step. This operation effectively takes the new amplitudes and reflects them about their average value. You can think of this as a geometric transformation on the amplitudes, pulling the target state’s amplitude upward while pushing the others downward.
 \
 \
 The combination of these two steps is critical. Initially, all states have equal amplitude. After one iteration, the target state’s amplitude becomes slightly larger in magnitude than the others. After two iterations, it grows a bit more. With each Grover iteration, the amplitude of the correct solution gets steadily “amplified,” while the others get diminished.
@@ -59,6 +63,39 @@ What’s really going on is quantum interference at work, just like in Shor’s 
 \
 \
 The math behind this is neat but intricate. In the end, Grover’s algorithm finds the target in $O(\sqrt{N})$ queries to the oracle. Compared to the classical $O(N)$, that’s a substantial improvement. For very large $N$, $\sqrt{N}$ is vastly smaller than $N$.
+\
+\
+If you’re a visual learner, below is a visual representation of Grover’s algorithm with each step explained. Note, to make it easier to visualize we will use only 2 qubits i.e a search space where $N\le4$. We will pick the state $|11\rangle$ as the target state.
+\
+\
+![Grover's Algorithm](/post/grovers.png "Grover's Algorithm")
+Step 1 - Superposition: After putting the quantum state into superposition all possible states $|00\rangle$, $|01\rangle$, $|10\rangle$, and $|11\rangle$ are equally likely to be chosen as our “answer” - this effectively leads to a random guess, not very helpful. Formally, each state has an amplitude of $1/2$, given the probability of a state being measured is it’s amplitude squared, each state has an equal probability of being measured ($1/4$).
+\
+\
+Step 2 - Phase Flip: We mark the correct answer by flipping it’s phase. This is the subtle asymmetry we are looking for. Now 3 of our states have an amplitude of $1/2$ and the “target” state has an amplitude of $-1/2$. This has done nothing to help us measure the correct answer as each state still has the same probability of being measured.
+\
+\
+Step 3 - Inversion about the mean: The diffusion operation (inversion about the mean) reflects each amplitude about this average. Mathematically, if the old amplitude is $a_{\text{old}}$ and the average amplitude is m, then the new amplitude $a_{\text{new}}$ is given by: $a_{\text{new}} = 2m - a_{\text{old}}$.
+\
+\
+$m$ is easy to visualise in the image above. We simply sum all of the amplitudes and then divide by the total number of states. Sum of amplitudes:
+\
+\
+$\frac{1}{2} + \left(-\frac{1}{2}\right) + \frac{1}{2} + \frac{1}{2} = 0.5 - 0.5 + 0.5 + 0.5 = 1.0$
+\
+\
+Thus $m = 1/4 = 0.25$
+\
+\
+Applying this to each amplitude, for the “incorrect” states $|00\rangle$, $|01\rangle$, and $|10\rangle$:
+- $a_{\text{old}}=+1/2$
+- $a_{\text{new}} = 2(0.25) - 0.5 = 0.5 - 0.5 = 0$
+
+For the “correct target state” $|11\rangle$:
+- $a_{\text{old}}=-1/2$
+- $a_{\text{new}} = 2(0.25) - (-0.5) = 0.5 + 0.5 = 1.0$
+
+In other words, after the diffusion step, the entire amplitude is now concentrated on the marked state $|11\rangle$. This is exactly the outcome Grover’s algorithm aims for: the probability of measuring the marked state is now 100%.
 \
 \
 Just as with Shor’s algorithm, implementing Grover’s algorithm isn’t trivial. You need a fault-tolerant quantum computer with enough qubits to store your entire search space in superposition and to implement the oracle. And remember: you must know how to construct that oracle! If the oracle itself requires $O(N)$ work to build, then the advantage can fade.
