@@ -36,11 +36,9 @@ const Index = (props: {
             </Heading>
             <Box>
                 <Text>
-                    I'm a Software/Platform Engineer. I have{' '}
-                    {new Date().getFullYear() - 2016}+ years building and
-                    growing startups and did big company stuff before that. I
-                    have been a founder, CTO, Head of Engineering, and Head of
-                    Product. I also hold an MSc in Distributed Systems and AI.
+                    I'm a Software Engineer. Mostly interested in Cryptography,
+                    Platform Engineering, and AI. I have a MSc in Distributed
+                    Systems and AI.
                 </Text>
             </Box>
             <Heading mt={4} mb={4} fontSize={'20px'}>
