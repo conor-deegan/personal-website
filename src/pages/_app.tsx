@@ -1,7 +1,6 @@
-import '@fontsource/inter';
+import '@fontsource/ibm-plex-sans';
 import '@fontsource/ubuntu-mono/400.css';
 import '@fontsource/ubuntu-mono/700.css';
-import '@fontsource-variable/fraunces';
 
 import { ChakraProvider, extendTheme } from '@chakra-ui/react';
 import { Analytics } from '@vercel/analytics/react';
@@ -15,7 +14,7 @@ const colors = {
     brand: {
         darkPrimary: '#000',
         darkSecondary: '#17181c',
-        lightPrimary: '#fff9e6',
+        lightPrimary: '#fffdf7',
         lightSecondary: '#faeecd',
         darkLink: '#0000EE',
         lightLink: '#69b9ff'
@@ -49,8 +48,8 @@ const customTheme = extendTheme({
         })
     },
     fonts: {
-        body: 'Inter, sans-serif',
-        heading: 'Fraunces Variable',
+        body: 'IBM Plex Sans, sans-serif',
+        heading: 'IBM Plex Sans, sans-serif',
         mono: 'Ubuntu Mono, monospace'
     },
     colors

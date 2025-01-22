@@ -21,6 +21,7 @@
         "@emotion/styled": "^11.11.0",
         "@fontsource-variable/fraunces": "^5.0.20",
         "@fontsource-variable/inconsolata": "^5.0.15",
+        "@fontsource/ibm-plex-sans": "^5.1.1",
         "@fontsource/inter": "^5.0.1",
         "@fontsource/ubuntu-mono": "^5.0.2",
         "@types/node": "20.2.5",
