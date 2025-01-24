@@ -1,9 +1,8 @@
-import './global.css';
+import './globals.css';
 import { Analytics } from '@vercel/analytics/react';
 import { baseUrl } from './sitemap';
 import Footer from './components/footer';
-import { GeistMono } from 'geist/font/mono';
-import { GeistSans } from 'geist/font/sans';
+import { Geist, Geist_Mono } from 'next/font/google';
 import type { Metadata } from 'next';
 import { Navbar } from './components/nav';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -36,7 +35,15 @@ export const metadata: Metadata = {
     },
 };
 
-const cx = (...classes) => classes.filter(Boolean).join(' ');
+const geistSans = Geist({
+    variable: '--font-geist-sans',
+    subsets: ['latin'],
+});
+
+const geistMono = Geist_Mono({
+    variable: '--font-geist-mono',
+    subsets: ['latin'],
+});
 
 export default function RootLayout({
     children,
@@ -46,11 +53,7 @@ export default function RootLayout({
     return (
         <html
             lang="en"
-            className={cx(
-                'text-black bg-white dark:text-white dark:bg-black',
-                GeistSans.variable,
-                GeistMono.variable
-            )}
+            className={`${geistSans.variable} ${geistMono.variable} text-black bg-white dark:text-white dark:bg-black`}
         >
             <head>
                 <link rel="icon" href="/favicon.ico" sizes="any" />
