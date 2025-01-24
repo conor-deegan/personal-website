@@ -5,8 +5,7 @@
     "build": "next build",
     "start": "next start",
     "l:c": "next lint",
-    "l:f": "next lint --fix",
-    "prepare": "husky"
+    "l:f": "next lint --fix"
   },
   "dependencies": {
     "@tailwindcss/postcss": "4.0.0-alpha.13",
