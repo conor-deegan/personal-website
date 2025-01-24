@@ -87,9 +87,12 @@ export default async function Blog(props: { params: Promise<{ slug: string }> })
             <h1 className="title font-semibold text-2xl tracking-tighter">
                 {post.metadata.title}
             </h1>
-            <div className="flex justify-between items-center mt-2 mb-8 text-sm">
+            <div className="mt-2 mb-8 text-sm space-y-2">
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
                     {formatDate(post.metadata.publishedAt, true)}
+                </p>
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
+                    {post.content.split(' ').length} words
                 </p>
             </div>
             <article className="prose">
