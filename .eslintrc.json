@@ -1,61 +1,38 @@
 {
-    "env": {
-        "browser": false,
-        "node": true,
-        "es2021": true
-    },
-    "parser": "@typescript-eslint/parser",
-    "plugins": ["@typescript-eslint", "unused-imports", "simple-import-sort"],
-    "extends": [
-        "standard",
-        "eslint:recommended",
-        "plugin:@typescript-eslint/eslint-recommended",
-        "plugin:@typescript-eslint/recommended"
+  "extends": "next/core-web-vitals",
+  "rules": {
+    "no-console": "warn",
+    "no-debugger": "warn",
+    "no-alert": "warn",
+    "semi": [
+      "error",
+      "always"
     ],
-    "rules": {
-        "simple-import-sort/imports": "error",
-        "simple-import-sort/exports": "error",
-        "indent": ["error", 4, { "SwitchCase": 1 }],
-        "eol-last": ["error", "always"],
-        "quotes": ["error", "single"],
-        "semi": ["error", "always"],
-        "no-console": 2,
-        "comma-dangle": [
-            "error",
-            {
-                "arrays": "never",
-                "objects": "never",
-                "imports": "never",
-                "exports": "never",
-                "functions": "never"
-            }
-        ],
-        "no-unused-vars": [
-            "error",
-            {
-                "argsIgnorePattern": "^_"
-            }
-        ],
-        "func-call-spacing": 0,
-        "space-before-function-paren": [
-            "error",
-            {
-                "anonymous": "never",
-                "named": "never",
-                "asyncArrow": "always"
-            }
-        ],
-        "@typescript-eslint/no-unused-vars": "off",
-        "@typescript-eslint/no-unused-vars-experimental": "off",
-        "unused-imports/no-unused-imports": "error",
-        "unused-imports/no-unused-vars": [
-            "error",
-            {
-                "vars": "all",
-                "varsIgnorePattern": "^_",
-                "args": "after-used",
-                "argsIgnorePattern": "^_"
-            }
-        ]
-    }
+    "quotes": [
+      "error",
+      "single"
+    ],
+    "comma-dangle": [
+      "error",
+      "always-multiline"
+    ],
+    "no-unused-vars": "warn",
+    "eol-last": [
+      "error",
+      "always"
+    ],
+    "indent": [
+      "error",
+      4,
+      {
+        "SwitchCase": 1
+      }
+    ],
+    "sort-imports": [
+      "error",
+      {
+        "ignoreCase": true
+      }
+    ]
+  }
 }
