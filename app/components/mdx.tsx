@@ -1,14 +1,14 @@
 import { highlight } from 'sugar-high';
 import Image from 'next/image';
 import Link from 'next/link';
-import { MDXRemote } from 'next-mdx-remote/rsc';
+import { MDXRemote, MDXRemoteProps } from 'next-mdx-remote/rsc';
 import React from 'react';
 
-function Table({ data }) {
-    const headers = data.headers.map((header, index) => (
+function Table({ data }: { data: { headers: string[]; rows: string[][] } }) {
+    const headers = data.headers.map((header: string, index: number) => (
         <th key={index}>{header}</th>
     ));
-    const rows = data.rows.map((row, index) => (
+    const rows = data.rows.map((row: string[], index: number) => (
         <tr key={index}>
             {row.map((cell, cellIndex) => (
                 <td key={cellIndex}>{cell}</td>
@@ -26,12 +26,12 @@ function Table({ data }) {
     );
 }
 
-function CustomLink(props) {
+function CustomLink(props: { href: string; children: React.ReactNode }) {
     const href = props.href;
 
     if (href.startsWith('/')) {
         return (
-            <Link href={href} {...props}>
+            <Link {...props} className="text-blue-500 hover:underline">
                 {props.children}
             </Link>
         );
@@ -41,19 +41,32 @@ function CustomLink(props) {
         return <a {...props} />;
     }
 
-    return <a target="_blank" rel="noopener noreferrer" {...props} />;
+    return <a target="_blank" rel="noopener noreferrer" {...props} className='text-blue-500 hover:underline' />;
+}
+function RoundedImage(props: {
+    src: string;
+    width?: number;
+    height?: number;
+    className?: string;
+    alt: string;
+}) {
+    // eslint-disable-next-line jsx-a11y/alt-text
+    return <Image className="rounded-lg" {...props} />;
 }
 
-function RoundedImage(props) {
-    return <Image alt={props.alt} className="rounded-lg" {...props} />;
-}
-
-function Code({ children, ...props }) {
+function Code({
+    children,
+    ...props
+}: {
+    children: string;
+    className?: string;
+    style?: React.CSSProperties;
+}) {
     const codeHTML = highlight(children);
     return <code dangerouslySetInnerHTML={{ __html: codeHTML }} {...props} />;
 }
 
-function slugify(str) {
+function slugify(str: string) {
     return str
         .toString()
         .toLowerCase()
@@ -64,8 +77,8 @@ function slugify(str) {
         .replace(/\-\-+/g, '-'); // Replace multiple - with single -
 }
 
-function createHeading(level) {
-    const Heading = ({ children }) => {
+function createHeading(level: number) {
+    const Heading = ({ children }: { children: string }) => {
         const slug = slugify(children);
         return React.createElement(
             `h${level}`,
@@ -99,10 +112,10 @@ const components = {
     Table,
 };
 
-export function CustomMDX(props) {
+export function CustomMDX(props: MDXRemoteProps) {
     return (
         <MDXRemote
-            {...props}
+            source={props.source}
             components={{ ...components, ...(props.components || {}) }}
         />
     );
