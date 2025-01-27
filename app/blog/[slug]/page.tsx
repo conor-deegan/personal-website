@@ -89,7 +89,7 @@ export default async function Blog(props: { params: Promise<{ slug: string }> })
             </h1>
             <div className="mt-2 mb-8 text-sm space-y-2">
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {formatDate(post.metadata.publishedAt, true)}
+                    {formatDate(post.metadata.publishedAt, false)}
                 </p>
                 <p className="text-sm text-neutral-600 dark:text-neutral-400">
                     {post.content.split(' ').length} words
