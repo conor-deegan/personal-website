@@ -54,8 +54,10 @@ function RoundedImage(props: {
     return <Image className="rounded-lg" {...props} />;
 }
 
-function Code({
+function InlineCode({
     children,
+    className,
+    style,
     ...props
 }: {
     children: string;
@@ -63,7 +65,51 @@ function Code({
     style?: React.CSSProperties;
 }) {
     const codeHTML = highlight(children);
-    return <code dangerouslySetInnerHTML={{ __html: codeHTML }} {...props} />;
+    const defaultStyle = {
+        backgroundColor: '#f5f5f5',
+        padding: '0.2em 0.4em',
+        borderRadius: '4px',
+        fontFamily: 'monospace',
+    };
+    return (
+        <code
+            dangerouslySetInnerHTML={{ __html: codeHTML }}
+            className={className}
+            style={{ ...defaultStyle, ...style }}
+            {...props}
+        />
+    );
+}
+
+function CodeBlock({
+    children,
+    className,
+    style,
+    ...props
+}: {
+    children: {
+        props: {
+            children: string;
+            className: string;
+        };
+    };
+    className?: string;
+    style?: React.CSSProperties;
+}) {
+    const codeHTML = highlight(children.props.children);
+    const defaultStyle = {
+        backgroundColor: '#f5f5f5',
+        padding: '0.8em',
+        borderRadius: '4px',
+        fontFamily: 'monospace',
+        fontSize: '0.8em',
+        overflowX: 'auto' as const, // Ensure horizontal scrolling for long lines
+    };
+    return (
+        <pre style={{ ...defaultStyle, ...style }} className={className} {...props}>
+            <code dangerouslySetInnerHTML={{ __html: codeHTML }} />
+        </pre>
+    );
 }
 
 function slugify(str: string) {
@@ -80,9 +126,13 @@ function slugify(str: string) {
 function createHeading(level: number) {
     const Heading = ({ children }: { children: string }) => {
         const slug = slugify(children);
+        const style = {
+            fontSize: '1.2em',
+            fontWeight: '500',
+        };
         return React.createElement(
             `h${level}`,
-            { id: slug },
+            { id: slug, style },
             [
                 React.createElement('a', {
                     href: `#${slug}`,
@@ -108,7 +158,8 @@ const components = {
     h6: createHeading(6),
     Image: RoundedImage,
     a: CustomLink,
-    code: Code,
+    code: InlineCode,
+    pre: CodeBlock,
     Table,
 };
 
