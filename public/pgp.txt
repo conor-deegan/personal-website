@@ -1,0 +1,26 @@
+Proving ownership of:
+
+- https://www.conor.computer via https://www.conor.computer/pgp.txt & proof at https://www.conor.computer/pgp.txt.asc
+- https://www.conordeegan.dev via https://www.conordeegan.dev/pgp.txt & proof at https://www.conordeegan.dev/pgp.txt.asc
+- https://x.com/ConorDeegan4
+- https://github.com/conor-deegan via https://gist.github.com/conor-deegan/cf8a63f01ed6a01460215234f06f3f3e
+
+PGP key: 1157 FABB 4B58 3A92 69D1  C332 9EC5 30B5 788C 0870
+
+Full Public Key:
+
+-----BEGIN PGP PUBLIC KEY BLOCK-----
+
+mDMEaE1rvBYJKwYBBAHaRw8BAQdAJcN2BTqbmw3V1mPIWQRPdIoQkfv7ydZLCaV3
+k7LKfUC0a0Nvbm9yIERlZWdhbiAoT3duZXIgb2YgaHR0cHM6Ly93d3cuY29ub3Iu
+Y29tcHV0ZXIgYW5kIGh0dHBzOi8vd3d3LmNvbm9yZGVlZ2FuLmRldikgPGNvbm9y
+amRlZWdhbkBnbWFpbC5jb20+iJMEExYKADsWIQQRV/q7S1g6kmnRwzKexTC1eIwI
+cAUCaE1rvAIbAwULCQgHAgIiAgYVCgkICwIEFgIDAQIeBwIXgAAKCRCexTC1eIwI
+cCFCAQCuoqVJKN1y3S/Og0VhMjtr1+YO5FYsxeDHjcYz18j9DAD/XZYM4c160aRW
+fwRwaJpeM+6JQtnAUAZJBEzAeO5oiQG4OARoTWu8EgorBgEEAZdVAQUBAQdAj82r
+/wW5V00HNls2pcCwG3Nmmr5Zrj5GMO8lgh56tEgDAQgHiHgEGBYKACAWIQQRV/q7
+S1g6kmnRwzKexTC1eIwIcAUCaE1rvAIbDAAKCRCexTC1eIwIcJRJAQCGpveK6LCK
+1r6dj3M8Tt6CG6Qj1oAl4qHR5bLyLwMQvgD/YxbRlQkeCYIGBhfIPSprNmDvaMPg
+8UE465XlAWcsUwo=
+=+zlg
+-----END PGP PUBLIC KEY BLOCK-----

@@ -5,7 +5,7 @@ export default function Page() {
         <section>
             <p className="mb-4">
         I&apos;m a computer scientist and software engineer. Mostly interested
-        in applied cryptography. I&apos;m currently head of engineering at{' '}
+        in applied cryptography. I&apos;m currently co-founder and head of engineering at{' '}
                 <a
                     href="https://www.projecteleven.com"
                     className="text-blue-500 hover:underline"
@@ -18,6 +18,7 @@ export default function Page() {
                 <h3 className="text-xl font-bold mb-4">notes</h3>
                 <BlogPosts />
             </div>
+            <p>My PGP is <a href="/pgp.txt" className="text-blue-500 hover:underline break-words"><code>9EC530B5788C0870</code></a></p>
         </section>
     );
 }
