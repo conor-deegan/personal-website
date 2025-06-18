@@ -5,7 +5,7 @@ export default function Page() {
         <section>
             <p className="mb-4">
         I&apos;m a computer scientist and software engineer. Mostly interested
-        in applied cryptography. I&apos;m currently co-founder and head of engineering at{' '}
+        in applied cryptography. I&apos;m currently co-founder and VP of engineering at{' '}
                 <a
                     href="https://www.projecteleven.com"
                     className="text-blue-500 hover:underline"
