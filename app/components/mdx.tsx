@@ -5,44 +5,44 @@ import { MDXRemote, MDXRemoteProps } from 'next-mdx-remote/rsc';
 import React from 'react';
 
 function Table({ data }: { data: { headers: string[]; rows: string[][] } }) {
-    const headers = data.headers.map((header: string, index: number) => (
-        <th key={index}>{header}</th>
-    ));
-    const rows = data.rows.map((row: string[], index: number) => (
-        <tr key={index}>
-            {row.map((cell, cellIndex) => (
-                <td key={cellIndex}>{cell}</td>
-            ))}
-        </tr>
-    ));
-
     return (
         <table>
             <thead>
-                <tr>{headers}</tr>
+                <tr>
+                    {data.headers.map((header, i) => (
+                        <th key={i}>{header}</th>
+                    ))}
+                </tr>
             </thead>
-            <tbody>{rows}</tbody>
+            <tbody>
+                {data.rows.map((row, i) => (
+                    <tr key={i}>
+                        {row.map((cell, j) => (
+                            <td key={j}>{cell}</td>
+                        ))}
+                    </tr>
+                ))}
+            </tbody>
         </table>
     );
 }
 
-function CustomLink(props: { href: string; children: React.ReactNode }) {
-    const href = props.href;
-
+function CustomLink({ href, children }: { href: string; children: React.ReactNode }) {
     if (href.startsWith('/')) {
-        return (
-            <Link {...props} className="text-blue-500 hover:underline">
-                {props.children}
-            </Link>
-        );
+        return <Link href={href}>{children}</Link>;
     }
 
     if (href.startsWith('#')) {
-        return <a {...props} />;
+        return <a href={href}>{children}</a>;
     }
 
-    return <a target="_blank" rel="noopener noreferrer" {...props} className='text-blue-500 hover:underline' />;
+    return (
+        <a href={href} target="_blank" rel="noopener noreferrer">
+            {children}
+        </a>
+    );
 }
+
 function RoundedImage(props: {
     src: string;
     width?: number;
@@ -54,98 +54,53 @@ function RoundedImage(props: {
     return <Image className="rounded-lg" {...props} />;
 }
 
-function InlineCode({
-    children,
-    className,
-    style,
-    ...props
-}: {
-    children: string;
-    className?: string;
-    style?: React.CSSProperties;
-}) {
-    const codeHTML = highlight(children);
-    const defaultStyle = {
-        backgroundColor: '#f5f5f5',
-        padding: '0.2em 0.4em',
-        borderRadius: '4px',
-        fontFamily: 'monospace',
-    };
+function Code({ children, className }: { children: string; className?: string }) {
     return (
         <code
-            dangerouslySetInnerHTML={{ __html: codeHTML }}
+            dangerouslySetInnerHTML={{ __html: highlight(children) }}
             className={className}
-            style={{ ...defaultStyle, ...style }}
-            {...props}
         />
     );
 }
 
-function CodeBlock({
-    children,
-    className,
-    style,
-    ...props
-}: {
-    children: {
-        props: {
-            children: string;
-            className: string;
-        };
-    };
-    className?: string;
-    style?: React.CSSProperties;
-}) {
-    const codeHTML = highlight(children.props.children);
-    const defaultStyle = {
-        backgroundColor: '#f5f5f5',
-        padding: '0.8em',
-        borderRadius: '4px',
-        fontFamily: 'monospace',
-        fontSize: '0.8em',
-        overflowX: 'auto' as const, // Ensure horizontal scrolling for long lines
-    };
+function Pre({ children }: { children: { props: { children: string } } }) {
     return (
-        <pre style={{ ...defaultStyle, ...style }} className={className} {...props}>
-            <code dangerouslySetInnerHTML={{ __html: codeHTML }} />
+        <pre>
+            <code dangerouslySetInnerHTML={{ __html: highlight(children.props.children) }} />
         </pre>
     );
 }
 
-function slugify(str: string) {
+function slugify(str: string): string {
     return str
-        .toString()
         .toLowerCase()
-        .trim() // Remove whitespace from both ends of a string
-        .replace(/\s+/g, '-') // Replace spaces with -
-        .replace(/&/g, '-and-') // Replace & with 'and'
-        .replace(/[^\w\-]+/g, '') // Remove all non-word characters except for -
-        .replace(/\-\-+/g, '-'); // Replace multiple - with single -
+        .trim()
+        .replace(/\s+/g, '-')
+        .replace(/&/g, '-and-')
+        .replace(/[^\w-]+/g, '')
+        .replace(/--+/g, '-');
 }
 
 function createHeading(level: number) {
+    const sizeClasses: Record<number, string> = {
+        1: 'text-2xl',
+        2: 'text-xl',
+        3: 'text-lg',
+        4: 'text-base',
+        5: 'text-sm',
+        6: 'text-sm',
+    };
+
     const Heading = ({ children }: { children: string }) => {
         const slug = slugify(children);
-        const style = {
-            fontSize: '1.2em',
-            fontWeight: '500',
-        };
         return React.createElement(
             `h${level}`,
-            { id: slug, style },
-            [
-                React.createElement('a', {
-                    href: `#${slug}`,
-                    key: `link-${slug}`,
-                    className: 'anchor',
-                }),
-            ],
+            { id: slug, className: `${sizeClasses[level]} font-semibold tracking-tight` },
             children,
         );
     };
 
     Heading.displayName = `Heading${level}`;
-
     return Heading;
 }
 
@@ -158,9 +113,9 @@ const components = {
     h6: createHeading(6),
     Image: RoundedImage,
     a: CustomLink,
-    code: InlineCode,
-    pre: CodeBlock,
-    Table,
+    code: Code,
+    pre: Pre,
+    Table: Table,
 };
 
 export function CustomMDX(props: MDXRemoteProps) {

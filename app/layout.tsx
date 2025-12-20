@@ -2,7 +2,7 @@ import './globals.css';
 import { Analytics } from '@vercel/analytics/react';
 import { baseUrl } from './sitemap';
 import Footer from './components/footer';
-import { Geist, Geist_Mono } from 'next/font/google';
+import { Crimson_Pro, JetBrains_Mono } from 'next/font/google';
 import type { Metadata } from 'next';
 import { Navbar } from './components/nav';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -35,31 +35,26 @@ export const metadata: Metadata = {
     },
 };
 
-const geistSans = Geist({
-    variable: '--font-geist-sans',
+const crimsonPro = Crimson_Pro({
+    variable: '--font-serif',
     subsets: ['latin'],
+    display: 'swap',
 });
 
-const geistMono = Geist_Mono({
-    variable: '--font-geist-mono',
+const jetbrainsMono = JetBrains_Mono({
+    variable: '--font-mono',
     subsets: ['latin'],
+    display: 'swap',
 });
 
-export default function RootLayout({
-    children,
-}: {
-    children: React.ReactNode
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html
-            lang="en"
-            className={`${geistSans.variable} ${geistMono.variable} text-black bg-white dark:text-white dark:bg-black`}
-        >
+        <html lang="en" className={`${crimsonPro.variable} ${jetbrainsMono.variable}`}>
             <head>
                 <link rel="icon" href="/favicon.ico" sizes="any" />
             </head>
-            <body className="antialiased max-w-xl mx-4 mt-8 lg:mx-auto">
-                <main className="flex-auto min-w-0 mt-6 flex flex-col px-2 md:px-0">
+            <body className="antialiased max-w-2xl mx-auto px-6 md:px-8 mt-12 lg:mt-16">
+                <main className="flex-auto min-w-0 flex flex-col">
                     <Navbar />
                     {children}
                     <Footer />

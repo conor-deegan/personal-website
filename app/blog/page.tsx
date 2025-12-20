@@ -1,8 +1,8 @@
 import { BlogPosts } from './../components/posts';
 
 export const metadata = {
-    title: 'Notes',
-    description: 'Thoughts made into words.',
+    title: 'Writing',
+    description: 'Writing about things I find interesting.',
 };
 
 export default function Page() {

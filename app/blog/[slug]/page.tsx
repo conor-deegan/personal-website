@@ -1,32 +1,21 @@
 import { formatDate, getBlogPosts } from './../utils';
 import { baseUrl } from './../../sitemap';
 import { CustomMDX } from './../../components/mdx';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 
 export async function generateStaticParams() {
-    const posts = getBlogPosts();
-
-    return posts.map((post) => ({
-        slug: post.slug,
-    }));
+    return getBlogPosts().map((post) => ({ slug: post.slug }));
 }
 
 export async function generateMetadata(props: { params: Promise<{ slug: string }> }) {
     const params = await props.params;
-    const post = getBlogPosts().find((post) => post.slug === params.slug);
-    if (!post) {
-        return;
-    }
+    const post = getBlogPosts().find((p) => p.slug === params.slug);
 
-    const {
-        title,
-        publishedAt: publishedTime,
-        summary: description,
-        image,
-    } = post.metadata;
-    const ogImage = image
-        ? image
-        : `${baseUrl}/og?title=${encodeURIComponent(title)}`;
+    if (!post) return;
+
+    const { title, publishedAt: publishedTime, summary: description, image } = post.metadata;
+    const ogImage = image ?? `${baseUrl}/og?title=${encodeURIComponent(title)}`;
 
     return {
         title,
@@ -37,11 +26,7 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
             type: 'article',
             publishedTime,
             url: `${baseUrl}/blog/${post.slug}`,
-            images: [
-                {
-                    url: ogImage,
-                },
-            ],
+            images: [{ url: ogImage }],
         },
         twitter: {
             card: 'summary_large_image',
@@ -52,16 +37,19 @@ export async function generateMetadata(props: { params: Promise<{ slug: string }
     };
 }
 
+function getReadingTime(content: string): string {
+    const words = content.split(/\s+/).length;
+    return `${Math.ceil(words / 200)} min read`;
+}
+
 export default async function Blog(props: { params: Promise<{ slug: string }> }) {
     const params = await props.params;
-    const post = getBlogPosts().find((post) => post.slug === params.slug);
+    const post = getBlogPosts().find((p) => p.slug === params.slug);
 
-    if (!post) {
-        notFound();
-    }
+    if (!post) notFound();
 
     return (
-        <section>
+        <article>
             <script
                 type="application/ld+json"
                 suppressHydrationWarning
@@ -77,29 +65,33 @@ export default async function Blog(props: { params: Promise<{ slug: string }> })
                             ? `${baseUrl}${post.metadata.image}`
                             : `/og?title=${encodeURIComponent(post.metadata.title)}`,
                         url: `${baseUrl}/blog/${post.slug}`,
-                        author: {
-                            '@type': 'Person',
-                            name: 'Conor Deegan',
-                        },
+                        author: { '@type': 'Person', name: 'Conor Deegan' },
                     }),
                 }}
             />
-            <h1 className="title font-semibold text-2xl tracking-tighter">
-                {post.metadata.title}
-            </h1>
-            <div className="mt-2 mb-8 text-sm space-y-2">
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {formatDate(post.metadata.publishedAt, false)}
-                </p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400">
-                    {post.content.split(' ').length} words
-                </p>
-            </div>
-            <article className="prose">
-                <div className="[&>p]:mb-6">
-                    <CustomMDX source={post.content} />
+
+            <header className="mb-10">
+                <h1 className="text-3xl font-semibold tracking-tight leading-tight mb-4">
+                    {post.metadata.title}
+                </h1>
+                <div className="flex items-center gap-3 text-muted text-sm font-sans">
+                    <time dateTime={post.metadata.publishedAt}>
+                        {formatDate(post.metadata.publishedAt, false)}
+                    </time>
+                    <span className="text-subtle">·</span>
+                    <span>{getReadingTime(post.content)}</span>
                 </div>
-            </article>
-        </section>
+            </header>
+
+            <div className="prose">
+                <CustomMDX source={post.content} />
+            </div>
+
+            <footer className="mt-16 pt-8 border-t border-border">
+                <Link href="/blog" className="nav-link text-sm">
+                    ← Back to other writing
+                </Link>
+            </footer>
+        </article>
     );
 }

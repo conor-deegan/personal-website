@@ -4,28 +4,28 @@ publishedAt: '2025-04-09'
 summary: 'My thoughts on approaching the migration to hybrid post-quantum cryptography and beyond.'
 ---
 
-Hybrid post-quantum cryptography (PQC) is necessary today. It keeps data secure now, even as quantum computing threatens current encryption. But hybrid PQC **should not** be a permanent fix. It’s a step along the way to fully quantum-resistant cryto.
+Hybrid post-quantum cryptography (PQC) is necessary today. It keeps data secure now, even as quantum computing threatens current encryption. But hybrid PQC **should not** be a permanent fix. It’s a step along the way to fully quantum-resistant crypto.
 
 ## Why hybrid PQC?
-<br />
+
 Current public key crypto systems (RSA, ECC) work fine today but will break under quantum computing. PQC methods (like schemes based on hard lattice problems) are quantum-resistant but still (*relatively*) new and untested-this assumption is getting less true each day and each standardisation round.
 
 Hybrid cryptography combines classical and PQC algorithms, reducing immediate risk. If one fails, the other protects us. This gives us room to safely adopt PQC methods.
 
 ## Defence in depth isn’t helpful here
-<br />
+
 Normally, defence in depth-layered security-is smart. But quantum threats aren't unknown; they're guaranteed. Classical encryption will fail when quantum computers mature. Hybrid PQC isn’t another layer; it's a planned, temporary safeguard.
 
 We’re not layering defences here. We’re explicitly preparing for a known future vulnerability.
 
 ## One continuous migration, not two
-<br />
+
 Transitioning to hybrid PQC will take significant resources. Naturally, companies won't want to go through it twice. But treating hybrid PQC and full PQC as two separate migrations is a mistake.
 
 Instead, view hybrid PQC as the first stage in a continuous journey. Implement it with full PQC in mind. Design systems and procedures to easily remove classical algorithms later, streamlining the move to pure PQC.
 
 ## Don't let temporary become permanent
-<br />
+
 Settling permanently for hybrid solutions leaves unnecessary complexity. It doubles key management overhead and adds technical debt. More importantly, hybrid PQC uses classical algorithms we know will eventually fail.
 
 Set clear timelines to move from classical crypto to hybrid, and from hybrid to full PQC.
