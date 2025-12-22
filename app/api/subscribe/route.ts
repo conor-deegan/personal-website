@@ -1,4 +1,3 @@
-import { checkBotId } from 'botid/server';
 import { NextRequest } from 'next/server';
 
 const EMAIL_REGEX = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -52,9 +51,6 @@ async function subscribeToButtondown(email: string): Promise<boolean> {
         body: JSON.stringify({ email_address: email }),
     });
 
-    console.error('response', response);
-    console.error('response', { response });
-
     if (!response.ok) {
         console.error(`Buttondown API error (${response.status}):`, await response.text());
     }
@@ -64,19 +60,10 @@ async function subscribeToButtondown(email: string): Promise<boolean> {
 
 /**
  * POST handler for email subscription
- * Validates the request, checks for bots, and adds the subscriber to Buttondown
+ * Validates the request and adds the subscriber to Buttondown
  */
 export async function POST(request: NextRequest): Promise<Response> {
     try {
-        const verification = await checkBotId();
-
-        console.error('verification', verification);
-        console.error('verification', { verification });
-
-        if (verification.isBot) {
-            return SERVICE_ERROR_RESPONSE;
-        }
-
         const email = await extractEmail(request);
         if (!email) {
             return BAD_EMAIL_RESPONSE;
