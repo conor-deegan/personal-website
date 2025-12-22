@@ -52,7 +52,8 @@ async function subscribeToButtondown(email: string): Promise<boolean> {
         body: JSON.stringify({ email_address: email }),
     });
 
-    console.log('response', response);
+    console.error('response', response);
+    console.error('response', { response });
 
     if (!response.ok) {
         console.error(`Buttondown API error (${response.status}):`, await response.text());
