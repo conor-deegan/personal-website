@@ -69,6 +69,10 @@ async function subscribeToButtondown(email: string): Promise<boolean> {
 export async function POST(request: NextRequest): Promise<Response> {
     try {
         const verification = await checkBotId();
+
+        console.error('verification', verification);
+        console.error('verification', { verification });
+
         if (verification.isBot) {
             return SERVICE_ERROR_RESPONSE;
         }
