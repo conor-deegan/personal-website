@@ -4,7 +4,7 @@ import { baseUrl } from './sitemap';
 import Footer from './components/footer';
 import { Crimson_Pro, JetBrains_Mono } from 'next/font/google';
 import type { Metadata } from 'next';
-import { Navbar } from './components/nav';
+// import { Navbar } from './components/nav';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 
 export const metadata: Metadata = {
@@ -55,7 +55,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             </head>
             <body className="antialiased max-w-2xl mx-auto px-6 md:px-8 mt-12 lg:mt-16">
                 <main className="flex-auto min-w-0 flex flex-col">
-                    <Navbar />
+                    {/* <Navbar /> */}
                     {children}
                     <Footer />
                     <Analytics />

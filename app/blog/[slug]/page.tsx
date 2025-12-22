@@ -88,7 +88,7 @@ export default async function Blog(props: { params: Promise<{ slug: string }> })
             </div>
 
             <footer className="mt-16">
-                <Link href="/blog" className="nav-link text-sm">
+                <Link href="/" className="nav-link text-sm">
                     ← All posts
                 </Link>
             </footer>
