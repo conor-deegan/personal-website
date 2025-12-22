@@ -1,0 +1,66 @@
+---
+title: 'The shared discipline of security engineering'
+publishedAt: '2025-12-22'
+summary: 'Thinking about the shared discipline of security engineering and how we should think about security as we scale.'
+---
+
+### The Shared Discipline of Security Engineering
+
+I recently wrote some internal notes for my team about how we should think about security as we scale. It started as a document to define expectations, but the more I wrote, the more I realized that this mindset shouldn't be limited to a specific company or a specific "security team".
+
+There is a hard truth about security engineering outside of idealized environments: usually, you are on the losing team.
+
+In many organizations, the security engineer costs more than they make. While product teams ship features that generate revenue, the security team is often seen as the blocker-the ones slowing things down, enforcing rules, or constantly reminding everyone about the "boring stuff" like 2FA, password policies, and dependency hygiene. That perception usually only changes after something breaks, when an organization would suddenly rather invest the time now than deal with a breach later.
+
+But this binary view-product builders vs. security gatekeepers-is outdated. We need to move toward a model where we all consider ourselves security engineers to some extent.
+
+#### Security is not a feature, it’s a foundation
+
+The distinction between "software engineering" and "security engineering" is often thinner than we think. A lot of good security boils down to great engineering practices: clean interfaces, clear ownership, secret management, documentation, and minimal assumptions.
+
+If you build with care, you naturally make it harder for others to break your work. If you think like an attacker, you naturally design better systems.
+
+This mindset is becoming critical because modern software is a house of cards built on open source dependencies. We leverage libraries to move fast, but this often makes us lazy; it is easy to add a dependency but hard to remove it.
+
+#### The AI Multiplier
+
+This responsibility is becoming heavier with the rise of AI. With vibe coding, agents can automatically install packages to achieve a user's goal. We are moving into an era where code is generated faster than it can be reviewed, often pulling in third-party libraries that users may not realize are there.
+
+If we blindly trust AI-generated implementations, we are automating the introduction of vulnerabilities. Supply-chain attacks are real and growing, with malicious packages slipping into production systems frequently. When an AI agent writes the code, who is responsible for its security?
+
+You are.
+
+The ease of generation does not absolve us of the responsibility of verification. In fact, it increases it. We must assume every dependency, service, and environment-whether written by a human or an LLM-can fail or be compromised.
+
+#### Principles of the Generalist Security Engineer
+
+If we accept that security is a shared discipline, how does that change how we write code day-to-day? Here are the principles I believe every engineer should operate by, regardless of their title:
+
+**1. Good security is hierarchy agnostic**
+Vulnerabilities do not respect job titles. If you see something wrong, you must call it out. There should never be a penalty for speaking up. If you don't feel comfortable raising it directly, raise it to someone who can.
+
+**2. Threat model everything**
+A threat model is simply a way of thinking clearly about what can break, how, and why it matters. It is the difference between reacting to problems and preventing them.
+
+**3. Least privilege always**
+Access should be minimal, scoped, and temporary. Once you do not need privileged access, ensure you are removed or descoped.
+
+**4. Automate anything**
+Anything that can be automated-tests, scans, audits, dependency checks-should be. Bake it into your CI, cron jobs, and release flows. Relying on human memory for security checks is a strategy destined for failure.
+
+**5. Stay current**
+Security is a moving target. What was safe a year ago might not be safe today. We must learn, adapt, and apply constant skepticism to our own work.
+
+#### Pragmatism and the Specialist
+
+Advocating for "security as a shared discipline" does not mean we eliminate the specialist. Security cannot be run by committee.
+
+There will always be a need for a smaller group of engineers who have the final say on what is secure and what is not. It is their responsibility to set clear standards and demonstrate how to design secure systems. The job of the general engineer is to make the specialist's life easy, so they don't have to make yours hard.
+
+I want to be pragmatic here: simply saying "everyone is a security engineer" doesn't magically make everyone an expert in cryptography or network hardening. You are not expected to be directly responsible for every cryptographic detail.
+
+However, ignorance is not a valid defense. If you don’t know how to threat model or verify a dependency, find out. Ask questions. Read. Security awareness is a professional requirement, not a nice-to-have.
+
+The desired end state is a team where each person moves the needle on making the organization more secure, rather than relying on a single engineer to somehow stay on top of every new dependency, AI-generated function, and risk.
+
+Secuirty is hard and intimidating. Breaches and hacks are headlines. It's worth it to start thinking like a security engineer!
