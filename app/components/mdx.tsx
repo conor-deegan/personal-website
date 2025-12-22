@@ -55,12 +55,7 @@ function RoundedImage(props: {
 }
 
 function Code({ children, className }: { children: string; className?: string }) {
-    return (
-        <code
-            dangerouslySetInnerHTML={{ __html: highlight(children) }}
-            className={className}
-        />
-    );
+    return <code dangerouslySetInnerHTML={{ __html: highlight(children) }} className={className} />;
 }
 
 function Pre({ children }: { children: { props: { children: string } } }) {

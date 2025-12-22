@@ -87,9 +87,9 @@ export default async function Blog(props: { params: Promise<{ slug: string }> })
                 <CustomMDX source={post.content} />
             </div>
 
-            <footer className="mt-16 pt-8 border-t border-border">
+            <footer className="mt-16">
                 <Link href="/blog" className="nav-link text-sm">
-                    ← Back to other writing
+                    ← All posts
                 </Link>
             </footer>
         </article>

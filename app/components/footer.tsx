@@ -41,6 +41,12 @@ export default function Footer() {
                 ))}
             </ul>
             <p className="mt-6 text-subtle text-sm font-sans">
+                My PGP is{' '}
+                <a href="/pgp.txt" className="content-link font-mono text-sm">
+                    9EC530B5788C0870
+                </a>
+            </p>
+            <p className="mt-6 text-subtle text-sm font-sans">
                 © {new Date().getFullYear()} Conor Deegan
             </p>
         </footer>

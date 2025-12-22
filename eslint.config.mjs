@@ -10,7 +10,7 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
-    ...compat.extends('next/core-web-vitals', 'next/typescript'),
+    ...compat.extends('next/core-web-vitals', 'next/typescript', 'prettier'),
     {
         rules: {
             'no-console': ['error', { allow: ['warn', 'error'] }],
@@ -20,16 +20,6 @@ const eslintConfig = [
             '@typescript-eslint/no-explicit-any': 'error',
             '@typescript-eslint/explicit-function-return-type': 'off',
             '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-            'semi': ['error', 'always'],
-            'quotes': ['error', 'single'],
-            'indent': ['error', 4],
-            'no-trailing-spaces': 'error',
-            'space-before-function-paren': ['error', 'never'],
-            'comma-dangle': ['error', 'always-multiline'],
-            'object-curly-spacing': ['error', 'always'],
-            'array-bracket-spacing': ['error', 'never'],
-            'arrow-spacing': ['error', { before: true, after: true }],
-            'eol-last': ['error', 'always'],
             'sort-imports': ['error', { ignoreDeclarationSort: true }],
         },
     },

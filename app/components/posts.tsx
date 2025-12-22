@@ -8,15 +8,13 @@ export function BlogPosts() {
         <div className="space-y-6">
             {allBlogs
                 .sort((a, b) => {
-                    return new Date(b.metadata.publishedAt).getTime() -
-                        new Date(a.metadata.publishedAt).getTime();
+                    return (
+                        new Date(b.metadata.publishedAt).getTime() -
+                        new Date(a.metadata.publishedAt).getTime()
+                    );
                 })
                 .map((post) => (
-                    <Link
-                        key={post.slug}
-                        href={`/blog/${post.slug}`}
-                        className="group block"
-                    >
+                    <Link key={post.slug} href={`/blog/${post.slug}`} className="group block">
                         <article className="flex flex-col sm:flex-row sm:items-baseline gap-1 sm:gap-4">
                             <time
                                 dateTime={post.metadata.publishedAt}
