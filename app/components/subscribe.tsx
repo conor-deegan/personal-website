@@ -135,10 +135,10 @@ export function Subscribe() {
                             validationError
                                 ? 'validation-error'
                                 : errorMessage
-                                  ? 'submit-error'
-                                  : undefined
+                                    ? 'submit-error'
+                                    : undefined
                         }
-                        className={`flex-1 px-3 py-2 bg-transparent text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground-subtle))] border rounded font-sans text-sm transition-colors duration-150 focus:outline-none focus:border-[hsl(var(--accent))] disabled:opacity-50 disabled:cursor-not-allowed ${validationError || errorMessage ? 'border-red-500/50' : 'border-border hover:border-[hsl(var(--foreground-muted))]'}`}
+                        className={`flex-1 min-w-0 px-3 py-2 bg-transparent text-[hsl(var(--foreground))] placeholder:text-[hsl(var(--foreground-subtle))] border rounded font-sans text-sm transition-colors duration-150 focus:outline-none focus:border-[hsl(var(--accent))] disabled:opacity-50 disabled:cursor-not-allowed ${validationError || errorMessage ? 'border-red-500/50' : 'border-border hover:border-[hsl(var(--foreground-muted))]'}`}
                     />
                     <button
                         type="submit"
