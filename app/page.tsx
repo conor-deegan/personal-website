@@ -7,7 +7,7 @@ export default function Page() {
             <div className="mb-12 space-y-4">
                 <p>
                     I&apos;m a computer scientist and software engineer. Mostly interested in
-                    applied cryptography. I&apos;m co-founder and VP of engineering at{' '}
+                    applied cryptography. I&apos;m co-founder and CTO at{' '}
                     <a
                         href="https://www.projecteleven.com"
                         target="_blank"
