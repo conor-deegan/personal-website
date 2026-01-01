@@ -1,0 +1,82 @@
+---
+title: 'ML-DSA-B: Replacing SHAKE with BLAKE3 in ML-DSA'
+publishedAt: '2025-10-09'
+summary: 'Some notes on replacing SHAKE with BLAKE3 in ML-DSA'
+---
+
+I recently co-authored a variant of ML-DSA, called ML-DSA-B, which replaces the underlying hash function used in the standard, SHAKE, with BLAKE3.
+
+This work is part of the [PQC Suite B](https://github.com/PQC-Suite-B/) effort I am working on along with [Alex Pruden](https://x.com/apruden08), [JP Aumasson](https://x.com/veorq), and [Zooko Wilcox-O’Hearn](https://x.com/zooko). The latter two are two of the designers of BLAKE3.
+
+### Background
+
+ML-DSA ([FIPS 204](https://csrc.nist.gov/pubs/fips/204/final)), formerly Dilithium, is built on lattices, but when you implement it you quickly notice how hash-heavy it is. SHAKE128 and SHAKE256 show up everywhere: seed expansion, sampling, challenge generation, and transcript building. That is not surprising, a lot of modern cryptographic schemes rely on hashing heavily.
+
+Additionally, PQ signing algorithms are can be slow. See our site [How Big Is Too Big](https://www.howbigistoobig.com/) and some [benchmarks](https://github.com/conor-deegan/benching-pq) I have done previously.
+
+Once you profile ML-DSA, hashing is hard to ignore. A large share of signing and verification time ends up inside SHAKE. The exact percentage moves around depending on the implementation and the platform, but the shape is roughly consistent.
+
+That pushed us toward a basic question: if hashing is a big part of the cost, how much does the performance of the scheme change if you change only the hash?
+
+### Why BLAKE3?
+
+[BLAKE3](https://github.com/BLAKE3-team/BLAKE3) is a fast hash function designed for modern CPUs and parallelism. It is particularly strong on x86_64, which still dominates a lot of server infrastructure. It also gives you an extendable output interface, which is useful when you are replacing an XOF-heavy design.
+
+On top of generally being a solid and very fast hash function, both JP and Zooko are part of the team which created it.
+
+Disclaimer, if you don't know what are doing, use a standard as is. When you swap a hash function inside a signature scheme, the failures are rarely dramatic. You can easily produce something that compiles, passes basic tests, and is still subtly wrong because you lost domain separation somewhere, or you changed how bytes are derived from a transcript, or you introduced a usage pattern the hash was not intended for.
+
+### What we changed
+
+We forked a Rust implementation of ML-DSA and rebuilt the hashing layer so that the places that used SHAKE now use BLAKE3 instead. You can find the code [here](https://github.com/PQC-Suite-B/signatures).
+
+We intentionally kept the goal narrow. Same scheme structure, same parameters, same signing and verification logic. I wanted the change to be isolated enough that you can reason about it and measure it cleanly.
+
+The real work was in mapping SHAKE usage patterns to BLAKE3 output patterns in a way that stays disciplined about domain separation and deterministic behaviour. SHAKE and BLAKE3 both let you produce arbitrary-length output, but they do it differently. The details matter if you want the resulting variant to be boring and predictable - which is always what we want in cryptography.
+
+### Results
+
+The full results are [here](https://github.com/PQC-Suite-B/#faster-ml-dsa).
+
+On x86_64 machines the improvements are noticeable:
+- Signing is roughly 20 percent faster
+- Verification is roughly 30 percent faster
+- Message pre-hashing can be dramatically faster, in some cases up to about 60×
+
+The platform story is more nuanced than a single chart. Apple Silicon has strong support for SHAKE, so the gap narrows there. You still see wins in places like pre-hashing, but the signing and verification delta is smaller than on typical server CPUs.
+
+None of this is surprising. If a scheme spends a lot of time hashing, and you replace the hash with a faster one, you should expect a speedup. The value is in having a concrete implementation where the change is isolated, the measurements are repeatable, and the trade-offs are visible.
+
+### Systems thinking
+
+The performance work was the initial and still main motivation, but the most useful outcome for me was the understanding I got from doing it.
+
+Post-quantum schemes still feel like new machinery. Most people, even very good engineers, interact with them as black boxes. They pick a library, trust it, and treat the scheme as a static artifact.
+
+I do not think that is a good long-term posture, especially when the industry is about to spend years migrating critical systems. It is too easy to end up with confidence that is really just unfamiliarity.
+
+One practical way to get comfortable is to take a scheme apart, change one component, and force yourself to justify why the system still behaves the way you think it does (or should). You learn where the actual invariants are. You learn what is essential and what is a design choice. You also learn which parts you do not understand as well as you thought you did.
+
+This project was a good example of that. Swapping SHAKE for BLAKE3 is not conceptually deep or massively complex, but it requires you to trace how randomness and transcripts flow through ML-DSA, and to be explicit about where domain separation lives. That is the kind of understanding that pays off later when you are integrating these schemes into real systems and you have to make decisions under uncertainty.
+
+### What’s next?
+
+The same general idea applies to other post-quantum schemes, especially the ones that are even more hash-heavy. There is also a lot of work to do outside of Rust: C implementations, embedded constraints, side-channel considerations, and the reality of deploying this stuff in arbitrary environments.
+
+### Code and benchmarks
+
+Everything is open source:
+- [Repo](https://github.com/PQC-Suite-B)
+- [Project Eleven post](https://blog.projecteleven.com/posts/announcing-ml-dsa-b-optimizing-post-quantum-signatures-with-blake3)
+
+Pull it down, play with it, break it, and ideally make it better!
+
+### Edit 2025-13-09
+
+We added [test vectors](https://github.com/PQC-Suite-B/signatures/tree/b3/ml-dsa/tests).
+
+### Edit 2025-22-10
+
+ML-DSA-B C++ version:
+- [code](https://github.com/itzmeanjan/ml-dsa/tree/ml-dsa-b)
+- [post](https://x.com/meanjanroy/status/1980955869178413544)

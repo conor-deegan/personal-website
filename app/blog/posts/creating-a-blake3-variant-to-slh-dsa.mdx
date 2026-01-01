@@ -1,0 +1,60 @@
+---
+title: 'SLH-DSA-B: Creating a BLAKE3 variant of SLH-DSA'
+publishedAt: '2025-11-07'
+summary: 'Some notes on creating a BLAKE3 variant of SLH-DSA'
+---
+
+I would recommend reading the [ML-DSA-B post](./replacing-shake-with-blake3-in-ml-dsa) first.
+
+After ML-DSA-B, we did the same basic experiment on SLH-DSA: take the standardized construction, change only the hash function, and measure what moves.
+
+SLH-DSA is the stateless hash-based signature standard ([FIPS 205](https://csrc.nist.gov/pubs/fips/205/final)), derived from SPHINCS+. In the standard world it already comes in hash instantiations based on SHA-256 and SHAKE.
+
+In SLH-DSA-B, we replace the hashing layer with BLAKE3. The work sits in the same [PQC Suite B](https://github.com/PQC-Suite-B/) effort I am working on along with co-authors [Alex Pruden](https://x.com/apruden08), [JP Aumasson](https://x.com/veorq), and [Zooko Wilcox-O’Hearn](https://x.com/zooko). The latter two are two of the designers of BLAKE3.
+
+### Why bother, given SLH-DSA already has SHA-256 variants?
+
+With ML-DSA, the motivation was mostly "hashing dominates, so a faster hash should help". With SLH-DSA it is a little different.
+
+SLH-DSA is fundamentally a hash-based system. It is not a signature scheme that uses hashing a lot so much as a signature scheme built out of hashing. So you get two useful outcomes from doing this exercise:
+
+1. You get a practical view of the performance landscape across hash choices (SHAKE vs SHA2 vs BLAKE3) on real machines.
+2. You build a more grounded understanding of what SLH-DSA is doing internally, because you cannot swap the hash layer without tracing how the construction is wired together.
+
+### What we changed
+
+The implementation work followed the same constraint as ML-DSA-B: keep the scheme structure the same, change only the hash primitive.
+
+We forked RustCrypto’s SLH-DSA implementation and created a BLAKE3-based instantiation, plus test vectors for SLH-DSA-B.
+
+The [code](https://github.com/PQC-Suite-B/signatures/tree/b3/slh-dsa) mostly speaks for itself. The main things to be careful about are being explicit about domain separation, being careful about which mode of hashing you are using (plain hashing, keyed hashing as a PRF, XOF-like expansion), keeping the transcript and byte derivations boring and reproducible.
+
+SLH-DSA has more moving parts than ML-DSA in this respect, because the hash function is not just used for "hash this message". It makes up the majority of the scheme.
+
+### Results
+
+The full results as well as charts are in the [README](https://github.com/PQC-Suite-B#faster-slh-dsa).
+
+Generally:
+- SHAKE is consistently the slowest choice in these benchmarks, about 4 to 7× slower, which matches the intuition that SHAKE has a higher per-bit hashing cost in software.
+- BLAKE3 and SHA2 land in a similar range, and which one is ahead depends heavily on the CPU.
+- Architecture effects dominate: x86_64 tends to favor BLAKE3 because it benefits from SIMD-parallel hashing, Apple M3 tends to favor SHA2 because of dedicated SHA extensions.
+
+If you are using SHAKE-based SLH-DSA today, there is a clear performance penalty, and swapping away from SHAKE can matter a lot. If you are already on the SHA2 variants, BLAKE3 becomes more of a hardware-dependent trade, not a guaranteed upgrade.
+
+### More systems thinking
+
+I keep coming back to the same thing with these projects: post-quantum schemes are easy to treat as artifacts you import rather than systems you understand. A swap like this forces you to learn the scheme by rebuilding part of it.
+
+With SLH-DSA, that means you end up spending time on questions that are hard to internalize from reading alone, like:
+- what is actually being modeled as a random oracle versus what is relying on stronger structure
+- where domain separation is essential versus where it is just hygiene
+- how much of the implementation complexity is intrinsic to the construction versus a consequence of a specific hash choice
+
+That understanding is useful even if you never deploy the variant. It makes future engineering decisions less hand-wavy, especially when you are integrating SLH-DSA into real systems where performance, operational constraints, and auditability all matter.
+
+### Links
+
+Everything is in the [PQC Suite B](https://github.com/PQC-Suite-B) repo, including the benchmark graphs for Apple M3 and an x86_64 cloud VM, plus the code and test vectors.
+
+Pull it down, play with it, break it, and ideally make it better!

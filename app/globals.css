@@ -137,11 +137,18 @@
         margin-bottom: 0.5em;
     }
 
-    .prose ul,
-    .prose ol {
-        margin-top: 1em;
+    .prose ul {
+        margin-top: 0.5em;
         margin-bottom: 1.5em;
         padding-left: 1.5em;
+        list-style-type: disc;
+    }
+
+    .prose ol {
+        margin-top: 0.5em;
+        margin-bottom: 1.5em;
+        padding-left: 1.5em;
+        list-style-type: decimal;
     }
 
     .prose li {
