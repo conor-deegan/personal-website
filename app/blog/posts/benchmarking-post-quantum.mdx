@@ -1,0 +1,31 @@
+---
+title: 'Benchmarking post-quantum signatures'
+publishedAt: '2025-07-13'
+summary: 'Some notes on benchmarking post-quantum signatures against ECDSA'
+---
+
+Most discussions about post-quantum signatures stay pretty abstract. We talk about security levels, asymptotics, hardness assumptions, and future timelines. What is usually missing is a concrete sense of cost.
+
+I ran a set of focused benchmarks to answer the question: if you replaced ECDSA today, what do the size and performance tradeoffs actually look like in practice?
+
+The full code and results are in the [repo](https://github.com/conor-deegan/benching-pq).
+
+### The Real Baseline
+
+ECDSA is extremely well-optimized and sets a pretty high bar. On a modern laptop, key generation, signing, and verification all land in the tens of microseconds. Public keys are 33 bytes. Signatures are 64 bytes.
+
+Given this, any post-quantum scheme should be judged against ECDSA, not against theoretical efficiency or other post-quantum schemes.
+
+### ML-DSA
+
+ML-DSA increases sizes substantially, but performance stays in a familiar range. Public keys and signatures are tens of times larger than ECDSA. It pushes pressure onto bandwidth, storage, and calldata, but it may not fundamentally break most system designs. The more interesting result is performance. Verification is fast. In some variants it is faster than ECDSA. Signing and key generation are slower, but still comfortably sub-millisecond. From a systems perspective, ML-DSA feels like a heavy version of what we already run today. You pay a size tax, but the operational shape of the system may not radically change.
+
+### SLH-DSA
+
+SLH-DSA behaves exactly as its design suggests. Public keys are tiny which is attractive but everything else is expensive. Signature sizes jump into the multi-kilobyte range, and signing latency ranges from tens of milliseconds to over a second depending on the variant. The small variants optimize for size but are very slow to sign. The fast variants improve latency, but signatures grow further. Hash-based signatures are a deliberate tradeoff. You should choose them when you need their security properties, not when you want something operationally close to ECDSA.
+
+### What to pick?
+
+If you are designing systems that currently rely on ECDSA or EdDSA, ML-DSA is the only standardised post-quantum option that feels like a realistic near-term replacement.
+
+SLH-DSA remains really valuable and personally I am a fan of not intoducing new hardness assumptions where possible. But for a lot of systems it is not a realistic near-term replacement if performance is a concern.
