@@ -50,8 +50,12 @@ function RoundedImage(props: {
     className?: string;
     alt: string;
 }) {
-    // eslint-disable-next-line jsx-a11y/alt-text
-    return <Image className="rounded-lg" {...props} />;
+    return (
+        <div className="flex justify-center my-6">
+            {/* eslint-disable-next-line jsx-a11y/alt-text */}
+            <Image className="rounded-lg" {...props} />
+        </div>
+    );
 }
 
 function Code({ children, className }: { children: string; className?: string }) {
