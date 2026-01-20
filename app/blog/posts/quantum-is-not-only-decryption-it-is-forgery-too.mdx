@@ -1,0 +1,115 @@
+---
+title: 'Quantum is not only decryption. It is forgery too.'
+publishedAt: '2026-01-20'
+summary: 'Quantum is not only a confidentiality problem, it is an authenticity problem too.'
+---
+
+If your quantum plan focuses only on encryption, you are protecting data and leaving trust exposed.
+
+Most teams still hold a single mental model of the quantum threat: someone records encrypted traffic now and decrypts it later. That is real, but it is not the whole problem.
+
+The other half is less intuitive, and that is exactly why it gets missed. Quantum does not just threaten secrecy, it threatens authenticity, meaning the ability to prove who authorized what.
+
+Quantum is not only a confidentiality problem, it is an authenticity problem too.
+
+### Two threats, two different kinds of damage
+
+"Harvest-now-decrypt-later" (HNDL) is straightforward. Capture encrypted data today, decrypt it later when quantum is strong enough.
+
+"Harvest-now-forge-later" (HNFL) is the parallel threat for signatures. Capture signed artifacts today, then forge signatures later, producing artifacts that verify as if the real key signed them.
+
+These are realised differently because encryption and signatures do different jobs. Encryption is about who can read, signatures are about who can claim and who can be believed.
+
+If signatures fail, "valid signature" stops being a strong statement about authorization.
+
+### Why secrecy dominates the conversation
+
+Secrecy is easy to reason about because most companies already classify data by confidentiality. So the quantum story becomes: "that pile of encrypted stuff might be readable later".
+
+The mitigations are also familiar and operational. Protocol upgrades, key rotation, forward secrecy. You can point to a playbook and say "we know how to do this".
+
+Signature migration feels different because it touches identity and authorization across the whole system. Every place you sign, verify, store proofs, and rely on long-term validity becomes part of the scope.
+
+We tend to prioritize what fits the existing plumbing, and key exchange fits more cleanly than signing.
+
+### What "forge later" actually breaks
+
+HNFL is about stored proof, not stored secrets. If an attacker can forge signatures, they can manufacture messages, records, approvals, or attestations that still pass verification.
+
+That matters because signatures are designed to be durable evidence. They are meant to hold up years later, when the people involved have changed and the only thing you have left is the signed artifact.
+
+So the risk is not only "something bad happens". It is "something bad happens and it is hard to prove it did not", because verification stops being a reliable discriminator.
+
+HNFL turns stored signed data into a massive future liability.
+
+### Why this can be harder to recover from
+
+After a confidentiality failure, the fix is often forward-looking. Rotate keys, upgrade protocols, reduce future exposure, accept that some data might be compromised.
+
+After an authenticity failure, you are forced into a different question: what do we still trust about the past? If signatures are forgeable, you lose the ability to cleanly separate genuine artifacts from manufactured ones.
+
+Re-signing does not recreate the original meaning. A new signature today proves "I endorse this now", not "this was authorized then", which is what many systems implicitly rely on.
+
+You can rotate keys, but you cannot re-sign history in a way that means the same thing.
+
+### Blockchains make this obvious
+
+Blockchains help here because everything is explicit. A big part of the value proposition is that anyone can verify history, and signatures are a core ingredient of that.
+
+The assumption is that old signatures remain meaningful indefinitely. Nodes, auditors, indexers, and downstream systems keep verifying, long after the transaction happened.
+
+If a signature scheme used for historical transactions becomes forgeable, an attacker can produce valid-looking signed messages for keys that mattered in the past, and may still matter. Anything that treats those signatures as proofs of authorization can be exploited.
+
+If verification is the trust anchor, forging signatures attacks the anchor.
+
+### PKI has the same dependency
+
+PKI systems also depend on long-lived signature validity. Code signing, firmware updates, signed logs, certificate chains, signed timestamps, these are built specifically so someone can verify later, often in a different environment than where the artifact was created.
+
+The decision point is frequently "does this verify under a trusted key", because that is how you decide whether to run code, accept a document, or trust an event.
+
+If an attacker can forge a vendor’s code-signing signature, they can ship malware that passes "is this from the vendor?" checks. The fact your transport encryption was post-quantum safe does not help, because the decision point is the signature.
+
+If signatures are how you decide "who is allowed", forging signatures breaks the decision.
+
+### The rollout gap
+
+What I see in migration plans is a consistent asymmetry. Post-quantum key exchange gets attention early, post-quantum signatures get pushed out.
+
+This is understandable in the short term. KEMs can be swapped into TLS-style protocols with less application-level disruption than changing every place that signs and verifies across a company or ecosystem.
+
+But it creates a specific, compounding gap. You can end up with "PQ-safe transport" while still producing classical signatures every day that might be forgeable later, and the inventory of signed artifacts keeps growing.
+
+Post-quantum KEM rollout is progress, but it does not protect authenticity at all.
+
+### A better threat model starts with a boring list
+
+This is not to create panic but rather a call to model the system you actually have, not the one you wish you had.
+
+If your threat model is only "decrypt later", you will miss where trust is really anchored. In many systems, the trust anchor is signatures, because signatures are how authority gets expressed and audited.
+
+Start by writing down where signatures are produced and how long they need to remain meaningful.
+
+- Where do we sign today (releases, certificates, transactions, logs)?
+- Who relies on those signatures (users, partners, auditors, nodes)?
+- What is the verification horizon (months, years, decades)?
+
+Then rank by blast radius. A widely trusted code-signing key or a certificate chain has a very different footprint than an internal signed message that nobody archives.
+
+Treat signatures as first-class in the quantum threat model, not a footnote.
+
+### End
+
+If your system assumes signatures age well, quantum breaks that assumption. That is the part that does not show up in "encrypt everything" plans.
+
+Post-quantum KEMs matter and they reduce real risk. They just do not address the integrity side of the house, and it is easy to build false confidence if you do not separate those concerns.
+
+Recap:
+
+- There are two quantum threats: decrypt-later and forge-later.
+- Forge-later attacks authenticity, not secrecy.
+- Signature failures create retroactive trust problems that are hard to unwind.
+- Blockchains and PKI both assume long-lived signature validity.
+- PQ KEMs do not solve integrity.
+
+What is the most important thing in your stack that you trust today purely because "it is signed"?
