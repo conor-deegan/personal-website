@@ -1,0 +1,54 @@
+---
+title: 'PQC and side channels: the gap between standards and implementations'
+publishedAt: '2026-01-26'
+summary: 'The gap between standards and implementations is a problem for PQC.'
+---
+
+Post-quantum cryptography is now becoming an engineering problem, not a mathematics problem.
+
+NIST standardizing ML-KEM, ML-DSA, and SLH-DSA is a major milestone. It narrows the algorithm choices and lets the ecosystem converge. But standards do not mean "bug free", and they definitely do not mean "side-channel safe in your build on your hardware". They mostly mean we can stop debating which families to bet on, and start doing the messy work of shipping hardened implementations.
+
+If you are migrating to post-quantum crypto, the highest probability failures over the next few years are not going to be new cryptanalytic breaks. They are going to look like: a constant-time mistake, a compiler transformation you did not anticipate, a regression introduced during performance tuning or clean-up, or a subtle integration bug around key handling. The math is absolutely the foundation, but the security outcome will be decided mostly by software engineering and assurance.
+
+## What a side-channel attack is (briefly)
+
+A side-channel attack is when an attacker learns something about a secret from how the computation runs, not from the correctness of the output. The signal could be timing, cache behavior, power draw, electromagnetic leakage, or faults induced in hardware. The key idea is simple: if parts of the execution vary based on secret values, and an attacker can measure that variation, then information can leak.
+
+This is not unique to PQC. Classical crypto has decades of side-channel history, and the same physics applies to ML-KEM and ML-DSA. If anything, PQC raises the pressure because the implementations are larger and generally the arithmetic is more complex.
+
+## The mistake people make when they hear "standardized"
+
+A common mental shortcut is: "NIST standardized it, therefore the hard part is done, therefore I just need to switch algorithms". That is an understandable view if you have not lived through side-channel incidents. But the actual division of labor is very different.
+
+Standardization reduces uncertainty about algorithm selection. It does not remove implementation risk, because implementation risk depends on choices that standards do not control: language, compiler, optimization flags, microarchitecture, and how the surrounding protocol is glued together. Even small changes in code generation can matter for constant-time properties, and those changes can come from places teams do not think of as "security work", like routine upgrades to compilers or dependency updates. A secure algorithm in a paper is not the same thing as a secure binary running on real machines at scale.
+
+With ML-KEM and ML-DSA, you are dealing with structured polynomial arithmetic, transforms, decompositions, and encoding and decoding rules. You can implement all of this safely, and good libraries already do a lot of the heavy lifting. The issue is that there are more moving parts, and more moving parts means more opportunities for unintentional leakage.
+
+Constant-time concerns tend to show up in boring places; a division instruction that has variable latency on some CPUs, a branch that the compiler decides to introduce during optimization, a table lookup where the index depends on secret-derived data. None of these look dramatic in source code, and they often get introduced by someone trying to improve performance or "clean up" an implementation (my thoughts on AI refactoring is withheld for another post...).
+
+We have already seen this pattern. The [KyberSlash](https://kyberslash.cr.yp.to/) work is a good example of how a realistic timing side-channel can exist at the level of concrete instructions and become exploitable in practice, even when the algorithm itself remains sound. It is a reminder that "this looks constant-time" is not a strong claim, unless you can back it with the right kind of evidence (often at the assembly level, and tied to specific platforms).
+
+More recently, there has been discussion on the [NIST PQC mailing list](https://groups.google.com/a/list.nist.gov/g/pqc-forum/c/4zmi10if7_k) about constant-time issues in an ML-DSA implementation in the [RustCrypto signatures crate](https://github.com/RustCrypto/signatures/security/advisories/GHSA-hcp2-x6j4-29j7). I do not think anyone reading that thread would think "Rust is unsafe" or "these maintainers are reckless". I read it as: even careful teams, using modern tooling, can end up with constant-time properties that are not what they intended, because the toolchain and the hardware have their own behavior.
+
+## The pragmatic reality: most teams will not implement these
+
+Most teams adopting PQC will never implement ML-KEM, ML-DSA, or SLH-DSA themselves. They will take them through a TLS stack, an OS crypto provider, a cloud KMS, an HSM, or a library pulled in as a dependency. That is normal, and it is often the right decision.
+
+The risk is that "using a library" can become "outsourcing your threat model". Side-channel resistance is not always visible from a clean API, and it is not always captured by a high-level statement like "constant-time". So the pragmatic approach is: accept that you are consuming implementations, then build a lightweight assurance loop around the supply chain.
+
+Here is what that looks like in practice:
+- If the implementation is security-critical to your business, treat it like other high-risk dependencies, meaning you track versions, watch advisories, and have a path to patch quickly when issues are found.
+- Prefer implementations with a strong track record of side-channel awareness, including documented constant-time strategies and evidence of review that goes beyond "the tests pass".
+- Be explicit about your deployment environment, because the threat model changes between remote timing attacks, co-resident cache effects, and physical access scenarios.
+- If you are buying this as a product (KMS, HSM, secure element), ask what their side-channel evaluation story is in terms of what attacks they model and what certifications or test methodologies they use.
+- Assume regressions happen, because they do, and design your rollout so you can update crypto components quickly without a full redesign.
+
+In most organizations, ours included, the right setup is: one team (or a small set of named owners) is accountable for cryptographic assurance, even if they are not writing the crypto code. Their job is to set constraints (approved libraries, build settings, platform assumptions), define when re-validation is required, and make sure there is an incident response path when a vulnerability is disclosed.
+
+## There are always trade-offs
+
+Hardening against side channels costs something; constant-time techniques can reduce performance and complicate code, defensive measures that are reasonable on servers can be painful on embedded devices, masking and physical countermeasures can be expensive and still fail if implemented incorrectly. None of this means "do not ship PQC".
+
+It is also worth being honest about where this framing matters less. If you are using PQC only in environments with no meaningful measurement capability for attackers, side channels may not be your main risk. In many modern deployments, though, attackers get to send chosen inputs, measure timing at scale, share compute, or get hands-on access to devices. That is exactly where implementation details stop being internal and start being security-critical.
+
+The post-quantum transition is still the right direction. The milestone after standardization is not a new algorithm, it is a more mature engineering discipline around implementations: better tooling for constant-time verification, better audit practices, and better operational habits around crypto dependencies. If we do that part well, then the mathematical security NIST standardized will actually survive contact with reality.

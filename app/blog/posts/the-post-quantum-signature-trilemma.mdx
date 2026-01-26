@@ -4,8 +4,6 @@ publishedAt: '2026-01-12'
 summary: 'A way to think about the structural trade-off in post-quantum signatures.'
 ---
 
-## The Post-Quantum Signature Trilemma
-
 When people compare post-quantum signature schemes, a lot of the time, me included, the conversation often collapses into benchmarks. How fast is verification. How big are signatures. How many microseconds here, how many bytes there. That information matters, but it misses something more fundamental.
 
 There is a structural trade-off in post-quantum signatures that shows up everywhere once you start looking at them. This isn't necessarily novel but I rarely see it stated explicitly. Every post-quantum signature scheme is making a choice about where to pay its costs, and those costs show up along three dimensions; **speed, size, and how conservative the underlying security assumptions are**.
