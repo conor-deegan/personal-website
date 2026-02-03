@@ -1,0 +1,41 @@
+---
+title: 'Crypto-agility is the ability to delete crypto'
+publishedAt: '2026-02-03'
+summary: 'Crypto-agility is the ability to delete crypto.'
+---
+
+### What it is (and what it is not)
+
+Crypto-agility is the ability to change cryptography in a live system without a rewrite, without a flag day, and without creating a bigger security problem during the transition. It is not "we can rotate keys" and it is not "we support multiple algorithms". Those things are useful, but they do not prove you can change the shape of the system when the algorithm, formats, and verifiers need to be updated.
+
+So many security engineers I speak with claim they are crypto-agile, but very few can demonstrate it. They are by no means lying, but they are using a softer definition that stops at things like hygiene, runbooks, and vendor features. The moment you try to do a real migration, you find out the crypto is embedded in places you did not model, and the cost is paid in coordination, compatibility, and operational risk.
+
+Key rotation is the a great example of the confusion. Rotating a key keeps the algorithm fixed and swaps the secret, and most mature systems can do it. Crypto-agility is what you need when the algorithm changes, the signature size changes, the wire format changes, or the trust model changes. That hits things like databases, APIs, clients, tokens, audit trails, and third-party integrations, which is why the migration becomes a systems project and not just a project for your security team.
+
+### Ossification is the default outcome
+
+Ossification is the opposite of crypto-agility, and it is the default outcome of success. If your product survives long enough, crypto leaks into into things such as schemas, logs, receipts, client-side validators, embedded devices, and contracts with other teams and vendors. Even if you keep your core service flexible, the edges harden, and the edges are where you usually lose the ability to change anything without breaking something else.
+
+This is also why "we support multiple algorithms" is not the flex people think it is. In the real world you cannot migrate everything at once, so you run two cryptographic worlds at the same time for a while. That coexistence period is where teams either prove agility or accidentally create downgrade paths, messy verification logic, and permanent compatibility modes that never get removed.
+
+If you want a practical test, do not ask whether you can add a new algorithm. Ask whether you can remove one. Could you turn off a legacy signature scheme in &lt;some timeframe relevant to your system&gt; without breaking critical flows? Could you stop accepting an old handshake without taking an outage? If the honest answer is no, then your system does not converge toward agility, it asymptotes toward "support everything forever", and that is ossification.
+
+### Why post-quantum makes this urgent
+
+Post-quantum is the reason this matters now, and also the reason generic advice is failing people. Treating post-quantum as a one-time swap misses the real problem, which is repeated change under uncertainty. Standards will evolve, threat models will evolve, and implementations will keep surprising us, especially around side-channels and constant-time behavior. A plan that ends at "we swapped RSA for ML-KEM, shipped it, done" is not a plan, it is a bet that nothing meaningful will change again.
+
+Post-quantum also makes the trade-offs visible. Bigger keys and signatures stress bandwidth and storage, and hybrid approaches (classical plus post-quantum) trade smoother rollout for more complexity and more things to test. You take that trade because you are migrating an ecosystem, not a single service, and the long tail of clients and verifiers forces a period of coexistence whether you like it or not.
+
+### What it looks like in practice
+
+So what does real crypto-agility look like, beyond corporate jargon? It looks like a system designed to survive change: explicit versioning in formats, clear acceptance rules, downgrade resistance treated as a requirement, migration tooling for stored data, observability on who is using what, and an actual deletion plan for old algorithms. It can be pretty boring work, but it is the only work that counts when the next migration arrives.
+
+The reason I frame post-quantum as a crypto-agility migration is simple: if you do not build the capability now, you will pay the cost once and still end up ossified again. Shipping a post-quantum primitive is not the finish line. Being able to change it, safely, on a realistic timeline, is the thing that tells you whether you are actually crypto-agile.
+
+### A game
+
+If you made it this far, play a quick game. Pick one system you run today that uses TLS. Now imagine you get told that in six months you must turn off one widely deployed algorithm suite, and you are not allowed to break anything important.
+
+Before you even think about the new crypto, ask yourself if you can answer the boring questions: where does TLS actually terminate in your stack (CDN, WAF, ingress, mesh, proxies), who controls the clients (browsers, mobile apps, embedded devices, enterprise pinning), and where does negotiation happen such that a fallback path could quietly select the weaker option.
+
+Then ask one harder question: could you delete the old thing, not add the new thing. Could you prove from metrics what is still using it, find the long tail of internal tools and partner integrations that keep it alive, and remove it without turning the rollback plan into "turn it back on and hope". If thinking through it feels messy, that is the point, this is what crypto-agility looks like in practice.
