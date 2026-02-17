@@ -1,0 +1,63 @@
+---
+title: 'Post-Quantum Signatures from Scratch, Part 1: SHA-256'
+publishedAt: '2026-02-16'
+summary: 'SHA-256 is the foundation of post-quantum signatures. This post builds it from scratch in Rust.'
+---
+
+SHA-256 survives quantum computers because hash functions have no algebraic structure for quantum algorithms to exploit, and that property is the entire foundation of hash-based post-quantum signatures.
+
+When people talk about quantum computers "breaking cryptography", they almost always mean one specific thing: Shor's algorithm. Shor's efficiently solves integer factorization and the discrete logarithm problem, which breaks RSA, elliptic curve signatures, and classical Diffie-Hellman. These schemes rely on the hardness of problems with hidden algebraic structure (group operations on elliptic curves, modular exponentiation in large prime fields), and Shor's algorithm exploits that structure via the quantum Fourier transform. Hash functions are not algebraic objects. SHA-256 is a bunch of bitwise rotations, XORs, modular additions, and fixed constants. There is no group structure, no ring, nothing for a quantum algorithm to decompose.
+
+The best known quantum attack against a hash function is Grover's algorithm, which provides a quadratic speedup on unstructured search. In practical terms, an attacker trying to find a preimage of SHA-256 (an input that produces a given output) would need roughly 2^128 quantum operations instead of 2^256 classical ones. 128 bits of security is the same level we already accept for AES-128. It survives because brute-force inversion is the only known strategy against it, and quantum computers "only" cut the exponent in half.
+
+This post, the first in a 3 parter, focuses on building SHA-256 from scratch in Rust and is the foundation for everything else in this series. Hash-based signature schemes like SPHINCS+ (standardized by NIST as SLH-DSA) and XMSS build their security entirely on the properties of the hash function underneath. If you trust SHA-256 today for the things you already use it for, you don't need to trust anything new to get post-quantum signatures. No new hardness assumptions, no new mathematical conjectures, just hashing. Which is a claim no lattice-based scheme can make. Disclaimer, I believe lattice-based schemes, such as ML-DSA, will be the drop-in replacement for most digital signatures in the post-quantum era. They are secure, fast-ish, and mostly smaller than hash-based schemes.
+
+The code can be found [here](https://github.com/conor-deegan/lamport-rust).
+
+## The implementation
+
+SHA-256 takes an arbitrary-length message and produces a fixed 256-bit (32-byte) hash. The algorithm has four phases.
+
+First, the message is padded to a multiple of 512 bits (64 bytes). The padding appends one bit of value 1 (written in code as the byte `0x80`, i.e. binary 10000000), then enough zero bytes so that there is room left for the length, then the original message length in bits as an 8-byte big-endian integer. This ensures every distinct message produces a distinct padded output, which matters for collision resistance.
+
+```rust
+fn pad_message(message: &[u8]) -> Vec<u8> {
+    let original_len_bits = (message.len() as u64) * 8;
+    let mut padded = message.to_vec();
+    padded.push(0x80);
+    while padded.len() % 64 != 56 {
+        padded.push(0x00);
+    }
+    padded.extend_from_slice(&original_len_bits.to_be_bytes());
+    padded
+}
+```
+
+Second, each 64-byte block is expanded into a "message schedule" of 64 32-bit words. The first 16 words are just the block itself, interpreted as big-endian 32-bit integers. Words 17–63 are computed one by one: each new word is a mix of four earlier words, using rotations, shifts, and XOR. That expansion spreads the influence of every input byte across the whole schedule, so small changes in the input affect the output in many, hard-to-predict ways (this is what cryptographers call diffusion).
+
+Third, the 64-word schedule is fed into a compression function that runs 64 rounds. The function keeps eight 32-bit working variables (initialized to fixed constants). In each round it combines the current state with one word from the schedule and one round constant, using four simple operations: **Ch** (choose: for each bit position, pick from one of two words depending on a third), **Maj** (majority: for each bit, output the majority of three inputs), and two rotation-and-XOR mixes (**Σ₀** and **Σ₁**) that move bits around within a word. The code below is exactly that; `ch`, `maj`, `big_sigma0`, `big_sigma1` wired into the round loop.
+
+```rust
+for i in 0..64 {
+    let t1 = h.wrapping_add(big_sigma1(e))
+              .wrapping_add(ch(e, f, g))
+              .wrapping_add(K[i])
+              .wrapping_add(w[i]);
+    let t2 = big_sigma0(a).wrapping_add(maj(a, b, c));
+    h = g; g = f; f = e;
+    e = d.wrapping_add(t1);
+    d = c; c = b; b = a;
+    a = t1.wrapping_add(t2);
+}
+```
+
+After 64 rounds, the eight working variables are added (with wrapping addition) into the hash state, the eight-word value we're building, which started as the fixed constants and is updated after each block. You can't run that backward: the intermediate values from every round are discarded, so the hash state is the only summary left. The fourth phase is to write those eight words out as 32 bytes. That's the hash.
+
+The properties we care about for this series are preimage resistance (given a hash output, you can't find any input that produces it) and collision resistance (you can't find any two inputs with the same hash). For Lamport signatures, preimage resistance is the critical one. Our implementation matches the NIST test vectors, which is the standard way to verify correctness:
+
+```
+SHA-256("")    = e3b0c44298fc1c149afbf4c8996fb924...
+SHA-256("abc") = ba7816bf8f01cfea414140de5dae2223...
+```
+
+This hash function is the only cryptographic assumption we need. In [Part 2](/blog/post-quantum-signatures-part-2), I build a complete digital signature scheme on top of it, using nothing else.

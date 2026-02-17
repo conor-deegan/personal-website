@@ -1,0 +1,57 @@
+---
+title: 'Post-Quantum Signatures from Scratch, Part 2: Lamport One-Time Signatures'
+publishedAt: '2026-02-17'
+summary: 'Lamport signatures are post-quantum signatures buuld entirely on the properties of the hash function. This post builds them from scratch in Rust.'
+---
+
+Lamport signatures prove you can build digital signatures from nothing but a hash function (which is quite cool).
+
+This is one of the simplest digital signature schems ever designed. The entire security argument fits in one sentence: if the hash function is preimage-resistant (given an output, you can't find the input), nobody can forge a signature. No number theory, no elliptic curves, no lattices, no pairings. The security of your signatures rests on one assumption: that SHA-256 is hard to invert. As covered in [Part 1](/blog/post-quantum-signatures-part-1), that assumption survives quantum computers. All code can be found [here](https://github.com/conor-deegan/lamport-rust).
+
+The scheme works like this. A private key is 256 pairs of random 32-byte values, 512 values in total (16,384 bytes). The public key is the SHA-256 hash of each of those 512 values, also 16,384 bytes. Key generation is nothing but randomness and hashing:
+
+```rust
+for i in 0..256 {
+    rng.fill_bytes(&mut private_key.pairs[i][0]);  // 32 random bytes
+    rng.fill_bytes(&mut private_key.pairs[i][1]);  // 32 random bytes
+    public_key.pairs[i][0] = sha256(&private_key.pairs[i][0]).0;
+    public_key.pairs[i][1] = sha256(&private_key.pairs[i][1]).0;
+}
+```
+
+To sign a message, you first hash it with SHA-256 to get a 256-bit digest. Then, for each of the 256 bits in that digest, you reveal one value from the corresponding private keypair: if the bit is 0, reveal the first value; if it's 1, reveal the second. The signature is these 256 revealed values (8,192 bytes).
+
+```rust
+pub fn sign(private_key: &PrivateKey, message: &[u8]) -> Signature {
+    let message_hash = sha256(message).0;
+    let mut signature = Signature { values: [[0u8; 32]; 256] };
+    for i in 0..256 {
+        let bit = get_bit(&message_hash, i);
+        signature.values[i] = private_key.pairs[i][bit as usize];
+    }
+    signature
+}
+```
+
+Verification is the mirror image. The verifier hashes the message to get the same 256-bit digest, then for each bit, hashes the corresponding signature value and checks that it matches the correct slot in the public key. If every position matches, the signature is valid. Only someone who knew the original random values (the private key) could produce values that hash to the published public key.
+
+```rust
+pub fn verify(public_key: &PublicKey, message: &[u8], signature: &Signature) -> bool {
+    let message_hash = sha256(message).0;
+    for i in 0..256 {
+        let bit = get_bit(&message_hash, i);
+        if sha256(&signature.values[i]).0 != public_key.pairs[i][bit as usize] {
+            return false;
+        }
+    }
+    true
+}
+```
+
+This it. You generate random values, hash them, publish the hashes. Signing is selecting from your random values. Verification is re-hashing and comparing. The entire scheme is randomness and a single hash function.
+
+## The downsides
+
+A Lamport private key and public key are 16,384 bytes each. The signature is 8,192 bytes. For comparison, an Ed25519 signature is 64 bytes with a 32-byte private key and a 32-byte public key.
+
+But the larger problem isn't size, it's the fact each private key can sign exactly one message. Sign a second message with the same key, and you reveal additional private key values. A different message means a different hash, which means different bits, which means you reveal values from the other side of pairs that the first signature left hidden. Those newly revealed values are what an attacker needs to start forging signatures. In [Part 3](/blog/post-quantum-signatures-part-3), I will demonstrate the full attack: recover a complete private key from roughly 10 reused signatures and forge a valid signature on a message the signer never signed.

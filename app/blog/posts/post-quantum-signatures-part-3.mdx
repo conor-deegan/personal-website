@@ -1,0 +1,61 @@
+---
+title: 'Post-Quantum Signatures from Scratch, Part 3: Breaking a Reused Key'
+publishedAt: '2026-02-18'
+summary: 'Reusing a Lamport key compromises security. This post shows how an attacker can recover the entire private key and forge signatures on arbitrary messages.'
+--- 
+
+In [Part 2](/blog/post-quantum-signatures-part-2), I said that reusing a Lamport key compromises security. Specifically, an attacker who observes a handful of signatures under the same key can recover the entire private key and forge signatures on arbitrary messages.
+
+Here's why, a Lamport private key consists of 512 secret values (256 pairs of 32 bytes). Each signature reveals exactly 256 of them: one from each pair, selected by the corresponding bit of the message hash. After a single signature, the attacker knows exactly half the private key. After a second signature on a different message, the message hashes will differ in roughly half their bit positions, revealing the previously hidden value for about 128 of the 256 pairs. Each subsequent signature fills in more gaps.
+
+## The attack
+
+The following attack we implement works purely from the attacker's perspective. All code can be found [here](https://github.com/conor-deegan/lamport-rust). The attacker has the public key (published openly) and observes a series of (message, signature) pairs. They don't need to know which bit of the message hash each signature value corresponds to. They can figure it out by hashing each signature value with SHA-256 and comparing against both slots of the public key at that position. Whichever slot matches tells them which secret was revealed and where to file it.
+
+```rust
+for i in 0..256 {
+    let sig_value = &sig_bytes[i * 32..(i + 1) * 32];
+    let hash_of_sig = sha256(sig_value);
+
+    let pk_slot_0 = &pk_bytes[i * 64..i * 64 + 32];
+    let pk_slot_1 = &pk_bytes[i * 64 + 32..i * 64 + 64];
+
+    if hash_of_sig.as_bytes()[..] == pk_slot_0[..] {
+        // Recovered private_key[i][0]
+    } else if hash_of_sig.as_bytes()[..] == pk_slot_1[..] {
+        // Recovered private_key[i][1]
+    }
+}
+```
+
+Running this against our implementation, the progressive recovery looks like this:
+
+```
+Signature  1: 256/512 private key values recovered (50.0%)
+Signature  2: 381/512 (74.4%)
+Signature  3: 441/512 (86.1%)
+Signature  5: 493/512 (96.3%)
+Signature  8: 509/512 (99.4%)
+Signature 10: 512/512 (100.0%)
+
+Full private key recovered after 10 signatures.
+```
+
+After the very first signature, 50% of the private key is already known. By signature 3, the attacker has over 86%. The remaining stragglers are positions where every observed message hash happened to have the same bit, so only one side of the pair was ever revealed. Statistically, these holdouts clear rapidly as more signatures arrive.
+
+Once all 512 values are known, forging a signature is simple. Hash the target message with SHA-256 to get 256 bits, then for each bit, select the corresponding recovered private key value. The forged signature passes verification because it is, mathematically, indistinguishable from a legitimate one. I show this by forging a signature on "Send all funds to the attacker", a message the real signer never signed, and it verified successfully against the original public key.
+
+```rust
+let forged_hash = sha256(forged_msg).0;
+for i in 0..256 {
+    let bit = (forged_hash[i / 8] >> (7 - (i % 8))) & 1;
+    let src = i * 64 + (bit as usize) * 32;
+    forged_sig_bytes[i * 32..i * 32 + 32]
+        .copy_from_slice(&recovered[src..src + 32]);
+}
+// Forged signature verifies as VALID
+```
+
+This attack is exactly why modern hash-based signature schemes are designed the way they are. SPHINCS+ (standardized by NIST as SLH-DSA) uses a hypertree of one-time signing keys: a large tree where each leaf contains a fresh one-time key, and the tree structure itself is authenticated using hash-based techniques. Each message is signed with a different leaf. The signer never reuses a one-time key because the protocol directs each message to a unique position in the tree. XMSS takes a similar approach but is stateful, meaning the signer must track which leaves have been consumed. If the state is lost, duplicated, or rolled back (as can happen in replicated systems, after a backup restore, or during failover), the same leaf might be reused, and you're back to exactly the vulnerability demonstrated above.
+
+If you want to see all of this working, the code is at the companion repository. Run `cargo run --bin cli "your message"` and it walks through SHA-256 hashing, Lamport signing, verification, tamper detection, and the full key-recovery attack with forgery.
