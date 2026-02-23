@@ -7,11 +7,14 @@ export default function Page() {
     return (
         <section>
             <div className="mb-12 space-y-4">
+                <h1 className="text-2xl font-semibold tracking-tight leading-tight mb-4">
+                    Conor Deegan
+                </h1>
                 <p>
-                    I am a computer scientist and software engineer, currently focused on post-quantum cryptography. My work includes signature schemes, key encapsulation mechanisms, hash-based constructions, lattice-based cryptography, and the symmetric primitives that support them. I am particularly interested in implementation security, side-channel resistance, benchmarking, performance trade-offs, and cryptographic agility in production systems. This site collects my notes on cryptography, implementation, and related engineering work.
+                    I&apos;m a computer scientist and software engineer. I work on post-quantum cryptography,  with a focus on the engineering side: secure implementations, side-channels, benchmarking, and upgrade paths.
                 </p>
                 <p>
-                    I&apos;m co-founder and CTO at{' '}
+                    I&apos;m  the co-founder and CTO at{' '}
                     <a
                         href="https://www.projecteleven.com"
                         target="_blank"
@@ -21,9 +24,7 @@ export default function Page() {
                         Project Eleven
                     </a>
                     .
-                </p>
-                <p>
-                    At the moment, I also write over on{' '}
+                    I also write on the{' '}
                     <a
                         href="https://blog.projecteleven.com"
                         target="_blank"
