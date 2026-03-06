@@ -11,10 +11,10 @@ export default function Page() {
                     Conor Deegan
                 </h1>
                 <p>
-                    I&apos;m a computer scientist and software engineer. I work on post-quantum cryptography,  with a focus on the engineering side: secure implementations, side-channels, benchmarking, and upgrade paths.
+                    I&apos;m a computer scientist and software engineer. I work on post-quantum cryptography.
                 </p>
                 <p>
-                    I&apos;m  the co-founder and CTO at{' '}
+                    I&apos;m  the co-founder and CTO of{' '}
                     <a
                         href="https://www.projecteleven.com"
                         target="_blank"
@@ -23,15 +23,14 @@ export default function Page() {
                     >
                         Project Eleven
                     </a>
-                    .
-                    I also write on the{' '}
+                    . I also write on the{' '}
                     <a
                         href="https://blog.projecteleven.com"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="content-link"
                     >
-                        the Project Eleven blog
+                        Project Eleven blog
                     </a>
                     .
                 </p>
