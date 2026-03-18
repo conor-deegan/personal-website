@@ -59,6 +59,14 @@ export default function Page() {
                         <p>Performance optimizations for post-quantum signature schemes with the BLAKE3 hash function</p>
                     </article>
                 </Link>
+                <Link href={'https://registry.projecteleven.com'} target='_blank' rel='noopener noreferrer' className="group">
+                    <article className="mb-4">
+                        <h3 className="group-hover:text-[hsl(var(--accent))] transition-colors">
+                            Post-quantum algorithm registry
+                        </h3>
+                        <p>I maintain a curated, open-source registry of post-quantum cryptographic algorithms, providing clear, structured data and comparisons for researchers and engineers.</p>
+                    </article>
+                </Link>
                 <Link href={'https://github.com/conor-deegan/benching-pq/'} target='_blank' rel='noopener noreferrer' className="group">
                     <article className="mb-4">
                         <h3 className="group-hover:text-[hsl(var(--accent))] transition-colors">
