@@ -1,0 +1,37 @@
+---
+title: 'Introducing THINCS'
+publishedAt: '2026-04-10'
+summary: 'A research CLI that searches the stateless hash-based signature parameter space under a signing-budget constraint and can instantiate a working signature scheme with the result.'
+---
+
+SLH-DSA ([FIPS 205](https://csrc.nist.gov/pubs/fips/205/final))/SPHINCS+ have big signatures. The smallest fast variant of SLH-DSA produces 17,088-byte signatures and the smallest compact variant still comes in at 7,856 bytes - on top of that operations can be slow. This is the main practical downside of the scheme, and it is a direct consequence of its parameter choices. I wrote about where SLH-DSA sits relative to ML-DSA and FN-DSA in [the post-quantum signature trilemma](./the-post-quantum-signature-trilemma).
+ 
+The twelve NIST parameter sets for SLH-DSA all support signing up to 2^64 messages under a single key. That is a reasonable default for a general-purpose standard, but it is far more than most signing keys will ever need. A firmware key might sign a few thousand times, a CA root might sign a few hundred intermediates, and a long-lived vault key might sign tens of times. The SLH-DSA construction allows you to adjust its internal parameters, and if you know your actual signing budget you can get significantly smaller signatures at the same security level.
+ 
+THINCS is a tool I built to do this. You give it a signing budget and a security level:
+ 
+```
+thincs --signatures 1000 --security 128
+```
+ 
+It searches the parameter space and returns the smallest valid parameter sets. Then it can instantiate whatever it finds as a working signature scheme so you can keygen, sign, and verify with it directly. There are parameter search scripts out there and there are SLH-DSA signing libraries, but nothing that does both in one tool.
+ 
+As ecosystems start adopting hash-based signatures, there will be applications where tuning the scheme to the actual signing requirement makes more sense than using the general-purpose defaults. THINCS is built for that.
+ 
+### Parameters
+ 
+For those who want the detail. SLH-DSA has six tuneable parameters:
+ 
+- **n** is the hash output size in bytes. Sets the security level: 16 for 128-bit, 24 for 192, 32 for 256.
+- **h** is the total tree height. The main knob for signing budget: 2^h possible leaf positions.
+- **d** is the number of tree layers.
+- **w** is the Winternitz parameter (4, 16, or 256). Trades signature size against signing speed.
+- **k** and **a** control the FORS component, which handles forgery resistance across multiple signatures.
+ 
+### Caveats
+ 
+THINCS follows the SPHINCS+ round-3 construction, not FIPS 205 SLH-DSA (it intentionally omits the message preprocessing step defined in FIPS 205 Algorithms 22 and 23). It supports both SHAKE and SHA-2 hash families with runtime selection. It is written in Rust from scratch with no existing SLH-DSA crate dependency. It is not production code, it is not audited, and it is not FIPS 205 compliant.
+ 
+The name is a play on SPHINCS+ ("thin SPHINCS+", or just "thinks").
+ 
+It is on [GitHub](https://github.com/conor-deegan/THINCS/), and the README has everything else.
