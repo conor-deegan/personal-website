@@ -86,4 +86,4 @@ If `d` is much smaller than `sigma`, `d * d` becomes a subnormal. On older Intel
  
 The same code on Node and Safari can produce different signatures for the same message and key. The verifier still accepts them, because verification does not redo the sampling but the signatures are not reproducible across platforms.
  
-ML-DSA uses integer arithmetic throughout. It does not have any of these problems if implemented correctly. For new deployments it is the safer default. Falcon is appropriate when signature size matters enough to justify validating floating point behaviour on every target platform and excepting the security implications.
+ML-DSA uses integer arithmetic throughout. It does not have any of these problems if implemented correctly. For new deployments it is the safer default. Falcon is appropriate when signature size matters enough to justify validating floating point behaviour on every target platform and accepting the security implications.
