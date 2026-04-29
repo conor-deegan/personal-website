@@ -43,17 +43,24 @@ function CustomLink({ href, children }: { href: string; children: React.ReactNod
     );
 }
 
-function RoundedImage(props: {
-    src: string;
-    width?: number;
-    height?: number;
-    className?: string;
-    alt: string;
-}) {
+function RoundedImage({
+    width,
+    height,
+    className,
+    ...imageProps
+}: React.ComponentProps<typeof Image>) {
+    const resolvedWidth = typeof width === 'number' ? width : 400;
+    const resolvedHeight = typeof height === 'number' ? height : 400;
+
     return (
         <div className="flex justify-center my-6">
             {/* eslint-disable-next-line jsx-a11y/alt-text */}
-            <Image className="rounded-lg" {...props} />
+            <Image
+                {...imageProps}
+                width={resolvedWidth}
+                height={resolvedHeight}
+                className={['rounded-lg', className].filter(Boolean).join(' ')}
+            />
         </div>
     );
 }

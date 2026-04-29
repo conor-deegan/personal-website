@@ -1,0 +1,89 @@
+---
+title: 'Falcon and floating point'
+publishedAt: '2026-04-29'
+summary: 'Falcon, currently in draft at NIST as FN-DSA (FIPS 206), uses floating point arithmetic during signing. This leads to notably more complex implementation challenges compared to other PQC schemes'
+---
+
+Falcon, currently in draft at NIST as [FN-DSA (FIPS 206)](https://www.nist.gov/news-events/news/2024/08/nist-releases-first-3-finalized-post-quantum-encryption-standards), uses floating point arithmetic during signing which increases implementation complexity and introduces security concerns. ML-DSA and SLH-DSA do not require any flaoting point arithmetic.
+ 
+## Integers and floating point
+ 
+Integers are whole numbers and computers store them exactly. Adding, subtracting, and multiplying integers gives the same result on every machine, every time.
+ 
+Floating point is how computers handle numbers with fractional parts, like 3.14 or 0.0001. A 64-bit floating point number uses 53 bits of precision, which is around 15 to 16 decimal digits. Anything that needs more digits has to be cut off. Numbers like `√2` or `e` have infinitely many digits with no repeating pattern, so they always have to be cut off somewhere.
+ 
+On top of this, a lot of  numbers with a decimal point cannot be stored exactly either. Computers store numbers in binary, not decimal, and most decimal fractions are infinite repeating fractions in binary. `0.1` is one of them. The same way `1/3` is `0.3333...` forever in decimal, `0.1` is `0.0001100110011...` forever in binary. The computer stores the closest 64-bit value it can, which means 0.1 is actually:
+ 
+```
+0.1000000000000000055511151231257827021181583404541015625
+```
+ 
+Not exactly `0.1`. The same is true for `0.2`. And when you add them `(0.1 + 0.2)` you get:
+ 
+```
+0.30000000000000004
+```
+ 
+Not exactly `0.3`. You can try this in any JavaScript console.
+
+<Image src="/floating-point-addition.png" alt="Floating point addition" width={400} height={400} />
+ 
+This is also  why `0.1 + 0.2 === 0.3` is `false`. The numbers being added are not the numbers you wrote down. They are the closest 64-bit approximations, and the result is the closest 64-bit approximation of their sum.
+
+<Image src="/floating-point-eval.png" alt="Floating point eval" width={400} height={400} />
+ 
+As a result of these sorts of discrepancies, most cryptographic algorithms use integer arithmetic only. There is no rounding, no precision loss, and the result is identical on every machine. Falcon is the exception in the current post-quantum signature lineup.
+ 
+## Why Falcon needs it
+ 
+Falcon's signing process samples random numbers from a specific shape of distribution over a lattice. The maths involves square roots and exponentials, which cannot be represented exactly in any fixed number of bits. Falcon's reference implementation uses 64-bit floating point to approximate them.
+ 
+Any change in how the rounding works changes the samples. Different samples produce different signatures. A signature produced with different rounding can still verify correctly, but the signing process can leak information about the secret key over many signatures, or fail to match what another implementation produces from the same inputs.
+ 
+## Determinism
+ 
+The [IEEE 754 standard](https://en.wikipedia.org/wiki/IEEE_754) defines how floating point works on almost every modern CPU. For basic operations (add, subtract, multiply, divide), it requires a specific bit-exact result. Every IEEE 754 machine stores `0.1` as the same approximation, stores `0.2` as the same approximation, and adds them to get the same `0.30000000000000004`. The error is identical everywhere. This makes basic floating point arithmetic deterministic across platforms, even though it is not exact.
+ 
+IEEE 754 does not require bit-exact results for functions like `exp`, `sin`, `log`, or `tan`. Each library and each chip can approximate these differently, within some tolerance. `Math.tan(1e16)` returns `-1.2451734357184066` in Node and `-1.245173435718406` in Safari. Same input, different output.
+
+<Image src="/floating-point-node.png" alt="Math.tan in a Node env" width={400} height={400} />
+
+<Image src="/floating-point-safari.png" alt="Math.tan in a Safari env" width={400} height={400} />
+ 
+Compilers also reorder and combine operations for speed. Multiplying three numbers as `(a * b) * c` and `a * (b * c)` can give slightly different rounded results despite the Associative Laws we all learn in school. In Node, `(0.1 * 0.2) * 0.3` is `0.006000000000000001` and `0.1 * (0.2 * 0.3)` is `0.006`. The compiler is free to pick either order.
+
+<Image src="/floating-point-associative.png" alt="Compilers vs Associative Law" width={400} height={400} />
+ 
+The Falcon reference code is written carefully to avoid these problems on the platforms it targets. However, reimplementations have to match its behaviour exactly to produce compatible signatures.
+ 
+## Timing
+ 
+Floating point operations are also not constant-time. A category of very small numbers called subnormals takes around 100 times longer to handle on x86 chips than normal numbers - you can read more [here](https://www.ieee-security.org/TC/SP2015/papers-archived/6949a623.pdf). Division and square root take variable amounts of time depending on inputs, I wrote about a specific side channel bug in ML-DSA [here](https://blog.projecteleven.com/posts/pq-implementation-vulnerabilities-volume-1-a-rustcrypto-side-channel-cve) which was the result of variable time division in a Rust crate (note, this was not due to floating point arithmetic, which does not appear in ML-DSA, but rather a poor implementation). The values inside Falcon's sampler depend on the secret key, so the time signing takes leaks information about the key.
+ 
+Constant-time floating point code is harder to write than constant-time integer code. The hardware behaves differently across CPU vendors and generations.
+ 
+## Platforms
+ 
+Signature schemes run on phones, browsers, embedded devices, hardware wallets, and HSMs. ARM and x86 have different rounding defaults. WebAssembly defines its own rules. JavaScript engines apply optimisations. A Falcon library that is correct and safe on a Linux server is not automatically correct or safe in Safari on an iPhone.
+ 
+## Putting it all together
+ 
+The inner loop of Falcon's sampler looks roughly like this:
+ 
+```javascript
+function acceptanceProb(z, center, sigma) {
+  const d = z - center;
+  const x = (d * d) / (2 * sigma * sigma);
+  return Math.exp(-x);
+}
+```
+ 
+`Math.exp` is one of the functions that IEEE 754 does not pin down. V8 (Chrome, Node), JavaScriptCore (Safari), and SpiderMonkey (Firefox) can return slightly different results for the same input - as our photo above shows. The same key signing the same message in two browsers can produce two different signatures. Note this is the same for other execution environments (HSMs, servers, hardware wallets, etc.)
+ 
+The expression `(d * d) / (2 * sigma * sigma)` can be evaluated in several mathematically equivalent orders. A JIT compiler can rearrange it for performance - just like our 0.1 + 0.2 + 0.3 example. Each rearrangement has slightly different rounding, which can change which samples the algorithm accepts.
+ 
+If `d` is much smaller than `sigma`, `d * d` becomes a subnormal. On older Intel chips and many embedded CPUs, subnormals take roughly 100x longer to handle than normal numbers. Modern desktop CPUs have mostly fixed this, but the worst case still exists somewhere in the deployment matrix. An attacker timing the signing operation across many signatures can see which inputs hit the slow path and learn something about the key.
+ 
+The same code on Node and Safari can produce different signatures for the same message and key. The verifier still accepts them, because verification does not redo the sampling but the signatures are not reproducible across platforms.
+ 
+ML-DSA uses integer arithmetic throughout. It does not have any of these problems if implemented correctly. For new deployments it is the safer default. Falcon is appropriate when signature size matters enough to justify validating floating point behaviour on every target platform and excepting the security implications.
