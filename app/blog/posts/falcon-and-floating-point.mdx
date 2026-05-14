@@ -4,7 +4,9 @@ publishedAt: '2026-04-29'
 summary: 'Falcon, currently in draft at NIST as FN-DSA (FIPS 206), uses floating point arithmetic during signing. This leads to notably more complex implementation challenges compared to other PQC schemes'
 ---
 
-Falcon, currently in draft at NIST as [FN-DSA (FIPS 206)](https://www.nist.gov/news-events/news/2024/08/nist-releases-first-3-finalized-post-quantum-encryption-standards), uses floating point arithmetic during signing which increases implementation complexity and introduces security concerns. ML-DSA and SLH-DSA do not require any flaoting point arithmetic.
+> **Update (May 2026):** Thanks to [Chris Peikert](https://x.com/ChrisPeikert) for pointing out that this post originally omitted Falcon's integer-emulation path (FPEMU), which is part of the reference implementation and avoids some of the issues described below. Algorand deployed a deterministic Falcon variant built on FPEMU in production, documented in [falcon-det.pdf](https://github.com/algorand/falcon/blob/main/falcon-det.pdf). A new section ("Falcon's emulation path") has been added near the end.
+
+Falcon, currently in draft at NIST as [FN-DSA (FIPS 206)](https://www.nist.gov/news-events/news/2024/08/nist-releases-first-3-finalized-post-quantum-encryption-standards), uses floating point arithmetic during signing which increases implementation complexity and introduces security concerns. ML-DSA and SLH-DSA do not require any floating point arithmetic.
  
 ## Integers and floating point
  
@@ -12,7 +14,7 @@ Integers are whole numbers and computers store them exactly. Adding, subtracting
  
 Floating point is how computers handle numbers with fractional parts, like 3.14 or 0.0001. A 64-bit floating point number uses 53 bits of precision, which is around 15 to 16 decimal digits. Anything that needs more digits has to be cut off. Numbers like `√2` or `e` have infinitely many digits with no repeating pattern, so they always have to be cut off somewhere.
  
-On top of this, a lot of  numbers with a decimal point cannot be stored exactly either. Computers store numbers in binary, not decimal, and most decimal fractions are infinite repeating fractions in binary. `0.1` is one of them. The same way `1/3` is `0.3333...` forever in decimal, `0.1` is `0.0001100110011...` forever in binary. The computer stores the closest 64-bit value it can, which means 0.1 is actually:
+On top of this, a lot of numbers with a decimal point cannot be stored exactly either. Computers store numbers in binary, not decimal, and most decimal fractions are infinite repeating fractions in binary. `0.1` is one of them. The same way `1/3` is `0.3333...` forever in decimal, `0.1` is `0.0001100110011...` forever in binary. The computer stores the closest 64-bit value it can, which means 0.1 is actually:
  
 ```
 0.1000000000000000055511151231257827021181583404541015625
@@ -28,7 +30,7 @@ Not exactly `0.3`. You can try this in any JavaScript console.
 
 <Image src="/floating-point-addition.png" alt="Floating point addition" width={400} height={400} />
  
-This is also  why `0.1 + 0.2 === 0.3` is `false`. The numbers being added are not the numbers you wrote down. They are the closest 64-bit approximations, and the result is the closest 64-bit approximation of their sum.
+This is also why `0.1 + 0.2 === 0.3` is `false`. The numbers being added are not the numbers you wrote down. They are the closest 64-bit approximations, and the result is the closest 64-bit approximation of their sum.
 
 <Image src="/floating-point-eval.png" alt="Floating point eval" width={400} height={400} />
  
@@ -36,7 +38,7 @@ As a result of these sorts of discrepancies, most cryptographic algorithms use i
  
 ## Why Falcon needs it
  
-Falcon's signing process samples random numbers from a specific shape of distribution over a lattice. The maths involves square roots and exponentials, which cannot be represented exactly in any fixed number of bits. Falcon's reference implementation uses 64-bit floating point to approximate them.
+Falcon's signing process samples random numbers from a specific shape of distribution over a lattice. The maths involves square roots and exponentials, which cannot be represented exactly in any fixed number of bits. Falcon's reference implementation supports two paths for this: hardware floating point (`FPNATIVE`) and integer-only emulation (`FPEMU`). The sections below describe the issues that arise on the hardware path. The emulation path is covered separately further down.
  
 Any change in how the rounding works changes the samples. Different samples produce different signatures. A signature produced with different rounding can still verify correctly, but the signing process can leak information about the secret key over many signatures, or fail to match what another implementation produces from the same inputs.
  
@@ -54,7 +56,7 @@ Compilers also reorder and combine operations for speed. Multiplying three numbe
 
 <Image src="/floating-point-associative.png" alt="Compilers vs Associative Law" width={400} height={400} />
  
-The Falcon reference code is written carefully to avoid these problems on the platforms it targets. However, reimplementations have to match its behaviour exactly to produce compatible signatures.
+On the hardware path, Falcon implementations have to manage these issues carefully to produce compatible signatures across platforms.
  
 ## Timing
  
@@ -64,7 +66,7 @@ Constant-time floating point code is harder to write than constant-time integer 
  
 ## Platforms
  
-Signature schemes run on phones, browsers, embedded devices, hardware wallets, and HSMs. ARM and x86 have different rounding defaults. WebAssembly defines its own rules. JavaScript engines apply optimisations. A Falcon library that is correct and safe on a Linux server is not automatically correct or safe in Safari on an iPhone.
+Signature schemes run on phones, browsers, embedded devices, hardware wallets, and HSMs. ARM and x86 have different rounding defaults. WebAssembly defines its own rules. JavaScript engines apply optimisations. A Falcon library built on hardware floating point that is correct and safe on a Linux server is not automatically correct or safe in Safari on an iPhone.
  
 ## Putting it all together
  
@@ -85,5 +87,21 @@ The expression `(d * d) / (2 * sigma * sigma)` can be evaluated in several mathe
 If `d` is much smaller than `sigma`, `d * d` becomes a subnormal. On older Intel chips and many embedded CPUs, subnormals take roughly 100x longer to handle than normal numbers. Modern desktop CPUs have mostly fixed this, but the worst case still exists somewhere in the deployment matrix. An attacker timing the signing operation across many signatures can see which inputs hit the slow path and learn something about the key.
  
 The same code on Node and Safari can produce different signatures for the same message and key. The verifier still accepts them, because verification does not redo the sampling but the signatures are not reproducible across platforms.
- 
-ML-DSA uses integer arithmetic throughout. It does not have any of these problems if implemented correctly. For new deployments it is the safer default. Falcon is appropriate when signature size matters enough to justify validating floating point behaviour on every target platform and accepting the security implications.
+
+## Falcon's emulation path
+
+The Falcon reference implementation includes a compile-time flag, `FALCON_FPEMU`, which replaces hardware floating point with integer-only emulation. The `fpr` type becomes a `uint64_t`, and every floating point operation is done using only integer arithmetic. The results are correctly rounded per IEEE 754 for normal values and zero.
+
+This path is deterministic and portable across ordinary C platforms, as long as the platform has constant-time 32x32→64 integer multiplication, constant-time 32-bit shifts, and signed right shift that matches arithmetic shift. Most platforms do. ARM Cortex M0/M0+/M3 and older PowerPC cores do not, and need extra care.
+
+FPEMU removes the floating point sources of divergence shown earlier. There is no `Math.tan`-style differences, because no platform `tan`, `exp`, or `sin` is called. There is no FMA divergence and no floating-point-level reordering, because the emulated operations are fixed sequences of integer instructions. Subnormal timing is also not a concern, because no hardware floating point ever runs. Standard constant-time discipline still applies at the integer level, but the hardware floating point issues are gone.
+
+Algorand built a deterministic Falcon variant on this path and deployed it for post-quantum transactions on its blockchain. The specification is in [falcon-det.pdf](https://github.com/algorand/falcon/blob/main/falcon-det.pdf).
+
+The cost is performance. FPEMU is slower than hardware floating point because each operation expands into several integer instructions. Algorand report that key generation slows by about a factor of 2x and signature generation by about 15x. Verification is not impacted as it does not use floating point operations. Thus, assuming you can absorb these performance tradeoffs, it is the safer default to use this emulation path.
+
+## Conclusion
+
+ML-DSA uses integer arithmetic throughout. It does not have any of these problems if implemented correctly. For new deployments where signature size is not the binding constraint, it remains the simpler default.
+
+Falcon is appropriate when signature size matters. Implementations that need cross-platform determinism and constant-time behaviour should use FPEMU. Implementations that use hardware floating point inherit the portability and timing issues described above and need to manage them carefully.
