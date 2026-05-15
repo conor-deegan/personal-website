@@ -1,0 +1,65 @@
+---
+title: 'Nine schemes advance to Round 3 of NISTs Additional Digital Signatures process'
+publishedAt: '2026-05-15'
+summary: 'A look at the third-round candidates of NISTs Additional Digital Signatures process.'
+---
+
+On 14 May 2026, NIST announced the third-round candidates of the Additional Digital Signatures process and released [IR 8610](https://nvlpubs.nist.gov/nistpubs/ir/2026/NIST.IR.8610.pdf), the second-round status report; nine schemes move forward and five do not. The next PQC Standardization Conference is scheduled for the first half of 2027\.
+
+Any scheme that comes out of this process will augment NIST's existing post-quantum signature standards: FIPS 204 (ML-DSA), FIPS 205 (SLH-DSA), and the draft FIPS 206 (FN-DSA).
+
+## Why this process exists
+
+Two of the three signature schemes from NIST's main PQC standardisation, ML-DSA and Falcon, are lattice-based. NIST opened the Additional Digital Signatures call in July 2022 to broaden the portfolio with non-lattice general-purpose signatures and with schemes offering shorter signatures or faster verification than SPHINCS+. The call required lattice submissions to provide at least one large performance advantage over both Dilithium (ML-DSA) and Falcon (FN-DSA), and non-lattice submissions to provide at least one large performance advantage over SPHINCS+ (SLH-DSA).
+
+40 candidates were accepted to [Round 1](https://csrc.nist.gov/Projects/pqc-dig-sig/round-1-additional-signatures), 14 advanced to [Round 2](https://csrc.nist.gov/Projects/pqc-dig-sig/round-2-additional-signatures) in October 2024, and now nine advance to [Round 3](https://csrc.nist.gov/Projects/pqc-dig-sig/round-3-additional-signatures).
+
+### The nine
+
+The nine candidates span four mathematical families: isogeny, lattice, MPC-in-the-Head, and multivariate.
+
+#### Isogeny
+
+**SQIsign** is the only isogeny-based scheme in the process. Isogeny schemes derive security from the hardness of finding maps between supersingular elliptic curves with the right algebraic structure. SQIsign has the smallest combined public-key and signature sizes of any candidate, with 148-byte signatures at security category 1\. Between rounds, the team improved signing speed by approximately 20× and verification by approximately 6×, and produced a cleaner security argument in the random oracle model. SQIsign still has higher latency than the other candidates, and fully constant-time signing remains open. NIST flagged side-channel resistance and broader community analysis of the underlying endomorphism-ring assumption as Round 3 priorities.
+
+#### Lattice
+
+**HAWK** is the only lattice scheme remaining. It is a hash-and-sign scheme which is the same idea as Falcon. Signatures are 555-bytes at category 1, smaller than Falcon's or ML-DSA's. The implementation uses integer arithmetic only, which avoids the floating-point requirements that make Falcon awkward on certain hardware. Further analysis of underlying hardness problem, smLIP,  is a stated Round 3 priority.
+
+#### MPC-in-the-Head
+
+Three candidates remain: FAEST, MQOM, and SDitH. MPC-in-the-Head (MPCitH) is a family of zero-knowledge proof techniques that turn a multi-party protocol into a signature scheme via the [Fiat-Shamir](https://en.wikipedia.org/wiki/Fiat%E2%80%93Shamir_heuristic) transform.
+
+**FAEST** is built on the VOLE-in-the-Head framework, with security reducing to well-studied symmetric primitives, primarily AES. NIST stated that it has the highest confidence in FAEST's security among the MPCitH candidates.
+
+**MQOM** uses Threshold Computation in the Head (TCitH) over the multivariate quadratic problem. It has the smallest total public-key plus signature sizes of any MPCitH candidate across all three security levels, with cycle counts comparable to its peers. However, its security proofs in the random oracle model and the quantum random oracle model are still maturing.
+
+**SDitH** applies MPCitH to the syndrome decoding problem for random linear codes over the binary field, which is generally considered more conservative than those used in other MPCitH schemes with the obvious exception of FAEST. NIST cited the hardness assumption as the basis for keeping SDitH. Its trade-off is higher computational cost than its peers.
+
+#### Multivariate
+
+Four candidates remain, all variants of [Unbalanced Oil and Vinegar](https://keymaterial.net/2024/12/24/unbalanced-oil-and-vinegar-part-i/) (UOV). UOV is a multivariate scheme that derives security from the hardness of solving structured systems of quadratic equations over finite fields.
+
+**UOV** itself is closest to the original construction, with signatures around 96 bytes at category 1 against expanded public keys of more than 200 KB. **MAYO** applies a "whipping" transformation that expands a small structured public key into a larger UOV instance, producing smaller public keys than standard UOV. **QR-UOV** uses quotient rings to reduce public-key sizes to roughly 15-50% of standard UOV's. **SNOVA** produces the most aggressive public-key compression in the family using a non-commutative ring construction.
+
+Despite recent attacks on UOV, MAYO, and SNOVA, NIST has opted to keep all of the multivariate schemes under consideration during the third round because they provide distinct benefits. NIST’s decision is informed by the long-standing history of UOV-based cryptography and the continued existence of unbroken parameter sets with promising performance benefits for each scheme.
+
+### The five that did not advance
+
+NIST eliminated CROSS, LESS, Mirath, PERK, and RYDE.
+
+CROSS is code-based and uses a restricted variant of syndrome decoding. Its performance profile sits close to SPHINCS+'s, with a much shorter cryptanalytic history on its underlying problem. [A Round 2 attack](https://link.springer.com/article/10.1007/s00009-025-02882-7) forced parameter changes and NIST ultimately judged that the marginal performance differences did not justify the lower assumption maturity.
+
+LESS is also code-based but uses the Linear Code Equivalence problem. Round 2 brought substantial signature-size reductions, but public keys remained very large and signing and verification were slow. A Round 2 attack ([Budroni et al., 2025](https://eprint.iacr.org/2025/227)) reduced concrete security by 12-24 bits depending on category.
+
+Mirath, PERK, and RYDE are MPCitH schemes based on MinRank, the Permuted Kernel Problem, and Rank Syndrome Decoding respectively. NIST was explicit that their elimination reflected the competitive field of candidates within the MPCitH category. NIST chose to prioritize a smaller selection of such candidates that offer more established security (e.g., relying only on AES) or a superior performance profile.
+
+Interestingly, the process now contains no code-based candidates.
+
+### My take
+
+HAWK and SQIsign are the two candidates most directly applicable to existing protocols at scale. HAWK offers a “Falcon-like” profile with integer-only arithmetic. SQIsign offers compact signatures and benefited from substantial performance improvements in Round 2\. Nevertheless, a lot more work is required before either should be considered for production use.
+
+### What to expect next
+
+Round 3 tweaks are due to NIST by 14 August 2026\. NIST has stated that significant changes may indicate an algorithm is not mature enough for standardisation. The next PQC Standardization Conference is scheduled for the first half of 2027, and the submitters of the nine Round 3 candidates will be invited to present updates there.
