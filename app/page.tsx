@@ -51,6 +51,14 @@ export default function Page() {
                         <p>Post-quantum BIP32 Hierarchical Deterministic Wallets from Lattice Assumptions</p>
                     </article>
                 </Link>
+                <Link href={'https://github.com/conor-deegan/THINCS/'} target='_blank' rel='noopener noreferrer' className="group">
+                    <article className="mb-4">
+                        <h3 className="group-hover:text-[hsl(var(--accent))] transition-colors">
+                            THINCS
+                        </h3>
+                        <p>A research CLI that searches the stateless hash-based signature parameter space under a signing-budget constraint and can instantiate a working signature scheme with the result.</p>
+                    </article>
+                </Link>
                 <Link href={'https://github.com/PQC-Suite-B/'} target='_blank' rel='noopener noreferrer' className="group">
                     <article className="mb-4">
                         <h3 className="group-hover:text-[hsl(var(--accent))] transition-colors">
