@@ -12,7 +12,7 @@ However, that is a single point of failure: you steal the private key from me an
 
 **Threshold signing** solves this by spreading the key across several people. You pick a rule like "any two of these three". Then any two of them, working together, can produce one ordinary signature. Any one of them alone cannot, and learns nothing about the secret key. The person checking the signature sees a perfectly normal signature, they cannot tell it was made by a group rather than by one person.
 
-*Note, this is not the same as everyone signing separately. That would result in several signatures stapled together where the verifier then verifies each signature in order to be satisfied. This ends up larger (`n × signature.len()`) and it also reveals to the verifier which parties signed. This is known as a "multi-sig". A threshold signature is a single signature, identical to one produced by a single signer.
+*Note, this is not the same as everyone signing separately. That would result in several signatures stapled together where the verifier then verifies each signature in order to be satisfied. This ends up larger (`n × signature.len()`) and it also reveals to the verifier which parties signed. This is known as a "multi-sig". A threshold signature is a single signature that verifies just like one produced by a single signer
 
 ## An easy kind of threshold signing
 
@@ -240,13 +240,13 @@ Any two signers between them hold all three small keys, so they can add them up 
 
 ### Move 2: split the throw-away into two stages
 
-Rather than one rejection sampling decision that needed the total, we split it into two:
+In single-signer ML-DSA, Rule 1 did two jobs at once: hide the secret, and keep the signature small. The trick is to split those two jobs apart. Rather than one rejection sampling decision that needed the total, we split it into two, one stage for each job:
 
-**Stage one, private, per signer.** Each signer runs the safe-zone rule (Rule 1) on their *own* `z{i}`. The safe zone is the same idea as before, the mask range shrunk by the largest shift the secret can cause. The catch from Section 4 was that this only works when that shift is small, and the shift is `challenge × keypiece`. So it hinges entirely on the key piece being short, which is what Move 1 got us. A short piece means a small shift, means the safe zone stays wide, which means rejection passes often enough to be practical. A `z{i}` that lands in the zone is already safe to reveal and it gives nothing away. A `z{i}` that falls outside is binned privately and never leaves the signer. Nobody ever reveals a binned `z{i}`!
+**Stage one, private, per signer.** Each signer runs the safe-zone check on their own `z{i}`, not on the total. It's the same safe-zone idea as Rule 1 (the mask range shrunk by the largest shift the secret can cause), but rather than being concerned with "is the total safe?", it checks "is my piece safe to reveal?". The catch from earlier was that this only works when that shift is small, and the shift is `challenge × keypiece`. So it hinges entirely on the key piece being short, which is what Move 1 got us. A short piece means a small shift, means the safe zone stays wide, which means rejection passes often enough to be practical. A `z{i}` that lands in the zone is already safe to reveal and it gives nothing away. A `z{i}` that falls outside is binned privately and never leaves the signer. Nobody ever reveals a binned `z{i}`!
 
-**Stage two, public, on the total.** Add up the `z{i}`s that passed and run the real ML-DSA checks on the combined `z`: the size check, and the commitment rounding check (Rule 2) that could only ever be answered by look at the total. This runs in the open, and it's safe, because every piece in the sum already cleared stage one and carries no secret. Nothing binned is ever shown; nothing shown is ever leaky.
+**Stage two, public, on the total.** Add up the `z{i}`s that passed and run the real ML-DSA checks on the combined `z`: the size check, this is the original Rule 1, back on the total, and the commitment rounding check (Rule 2), both of which could only ever be answered on the total. This runs in the open, and it's safe, because every piece in the sum already cleared stage one and carries no secret. Nothing binned is ever shown; nothing shown is ever leaky.
 
-Notice the division of labour: stage one is the **security** step (it hides the secret, and it's local), stage two is the **correctness** step (it makes the combined signature verify, and it's global). The reason we could push security down to each signer but not correctness is the same as before, Rule 1 could be made per-signer once the pieces were short; Rule 2 lives on the total no matter what.
+Notice the division of labour: stage one is the **security** step (it hides the secret, and it's local), stage two is the **correctness** step (it makes the combined signature verify, and it's global). The reason we could push security down to each signer but not correctness is the same as before: once the pieces are short, each signer can make their own `z{i}` safe to reveal locally, but whether the combined signature is valid (Rule 1's size bound and Rule 2's rounding) can only be judged on the total.
 
 ### Move 3: make the early w reveal safe too
 
@@ -264,7 +264,7 @@ Per-signer rejection has a cost. All the signers share one challenge (built from
 
 That failure compounds fast. If each signer keeps, say, 3 attempts in 4 on their own, then two signers keep the *same* attempt just over half the time, three signers about two in five, and by six you're down to under one in five. The more signers, the rarer it is that everyone passes together. The paper implements two mechanisms to increase the chance of success:
 
-**The first is a better-shaped safe zone.** So far the safe zone has been a range on each entry of `z`: every entry has to sit inside its bound, or the attempt is rejected. That is ML-DSA's rule, and across all the entries at once it forms a box.
+**The first is a better-shaped safe zone.** So far each signer's stage-one check has been a range on each entry of their `z{i}`: every entry has to sit inside its bound, or the attempt is rejected. Across all the entries at once, that forms a box.
 
 But a box is a wasteful shape because it rejects the attempt if *any single entry* falls outside its bound. With hundreds of entries, that is a hard bar to pass and one unlucky entry out of hundreds and the whole attempt has to be restarted, even if every other entry was tiny.
 
@@ -290,7 +290,7 @@ What makes ML-DSA hard isn't the linear algebra, it's the rejection sampling. To
 
 The solution proposed by Celi, del Pino, Espitau, Niot and Prest, is to make sure every piece is already safe by the time it is revealed. Give each signer a short piece of the key it owns outright, so it can run the rejection sampling on its own piece in private then check only the *size* of the combined signature in the open which is the correctness check, done globally, on pieces that are already safe. They also propose a better-shaped safe zone and a batch of parallel attempts keep the success rate up, and a little noise on each commitment makes the one unavoidable early reveal safe too.
 
-The result is a standard ML-DSA signature; same size, same verifier, indistinguishable from one a single signer produced, created by a group where no one ever held the whole key, and secure even if all but one of them is compromised.
+The result is a standard ML-DSA signature; same size, same verifier that can't tell it from one a single signer produced, created by a group where no one ever held the whole key, and secure even if all but one of them is compromised.
 
 There's plenty this post skipped; the distributed key generation, retrofitting existing keys, the exact rejection geometry, the security proof. It's all in the paper.
 
