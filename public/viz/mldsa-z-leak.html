@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<!--
+  ML-DSA z-bound leak / rejection-sampling demo (1-D teaching reduction).
+  Each dot = one signature. Real response: z = y + c*s1, y ~ Uniform[-B,B],
+  challenge c = H(mu, w1) is a +/-1 polynomial; collapsed here to one sign per
+  signature (drawn +/-1). The +1 (blue) signatures average +s; -1 (orange) -s. Half the
+  distance between the two averages is the secret. The bound (accept iff
+  |z| <= B - S_MAX) makes the accepted distribution identical for both signs,
+  so both averages collapse to 0 and the gap closes.
+  Estimate shown: s_hat = (mean_blue - mean_orange)/2 over accepted samples.
+  Only dependency: D3 v7 from a CDN.
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>z-bound leak in ML-DSA</title>
+<script src="https://cdn.jsdelivr.net/npm/d3@7.9.0/dist/d3.min.js"></script>
+<style>
+  :root{
+    --ink:#141414; --muted:#6b7280; --line:#e5e7eb;
+    --pos:#2563eb; --neg:#ea580c;
+    --mono: ui-monospace,"SF Mono","Cascadia Mono",Menlo,Consolas,monospace;
+    --sans: system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
+  }
+  *{box-sizing:border-box}
+  .zleak{ max-width:720px; margin:0 auto; color:var(--ink); background:#fff;
+    font-family:var(--sans); border:1px solid var(--line); border-radius:3px; }
+  .zleak .eyebrow{ font-family:var(--mono); font-size:11px; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--muted); padding:14px 18px 0; }
+  .zleak h2{ font-size:17px; font-weight:600; margin:2px 18px 0; }
+  .zleak .sub{ font-size:13px; color:var(--muted); margin:6px 18px 12px; line-height:1.45; }
+  .zleak code{ font-family:var(--mono); color:var(--ink); }
+  .zleak .plot{ padding:0 8px; }
+  .zleak svg{ display:block; width:100%; height:auto; }
+  .zleak text{ font-family:var(--mono); }
+  .zleak .narrate{ font-family:var(--mono); font-size:12px; color:var(--muted); padding:2px 18px 0; min-height:18px; }
+  .zleak .narrate b{ color:var(--ink); font-weight:600; }
+
+  .zleak .readout{ display:flex; border-top:1px solid var(--line); border-bottom:1px solid var(--line);
+    font-family:var(--mono); margin-top:10px; }
+  .zleak .cell{ flex:1; padding:10px 14px; border-right:1px solid var(--line); }
+  .zleak .cell:last-child{ border-right:0; }
+  .zleak .cell .k{ font-size:10px; letter-spacing:.06em; text-transform:uppercase; color:var(--muted); }
+  .zleak .cell .v{ font-size:22px; font-variant-numeric:tabular-nums; margin-top:3px; }
+  .zleak .cell .v small{ font-size:12px; color:var(--muted); }
+  .zleak .status.open{ color:#dc2626; } .zleak .status.closed{ color:#059669; }
+  .zleak .status{ font-weight:600; }
+
+  .zleak .controls{ padding:14px 18px; display:flex; flex-wrap:wrap; gap:16px 20px; align-items:center; }
+  .zleak .ctl{ display:flex; flex-direction:column; gap:5px; }
+  .zleak .ctl label{ font-family:var(--mono); font-size:11px; color:var(--muted); letter-spacing:.04em; }
+  .zleak input[type=range]{ width:150px; accent-color:var(--ink); }
+  .zleak .btn{ font-family:var(--mono); font-size:13px; padding:7px 13px; cursor:pointer;
+    background:var(--ink); color:#fff; border:1px solid var(--ink); border-radius:3px; }
+  .zleak .btn.ghost{ background:#fff; color:var(--ink); }
+  .zleak .btn:active{ transform:translateY(1px); }
+  .zleak .switch{ display:flex; align-items:center; gap:8px; font-family:var(--mono); font-size:13px; cursor:pointer; user-select:none; }
+  .zleak .switch input{ width:16px; height:16px; accent-color:#059669; }
+  .zleak .note{ font-family:var(--sans); font-size:12px; color:var(--muted); padding:12px 18px 16px; line-height:1.5; border-top:1px solid var(--line); }
+</style>
+</head>
+<body>
+<div class="zleak" id="app">
+  <div class="eyebrow">ML-DSA · Fiat–Shamir with aborts</div>
+  <h2>The secret is half the gap between the two averages</h2>
+  <div class="sub">Each dot is one signature. The real response is <code>z = y + c·s₁</code>, where the challenge <code>c = H(μ, w₁)</code> is a polynomial of ±1 coefficients built from the message and the commitment. Here it is collapsed to a single <b>challenge sign</b> per signature: a <span style="color:var(--pos)">+</span> shifts the average by <code>+s</code>, a <span style="color:var(--neg)">−</span> by <code>−s</code>. The distance between the two <b>average markers</b> is <code>2s</code> — turn on the bound and they slide together, and the secret disappears.</div>
+
+  <div class="plot"><svg id="chart" viewBox="0 0 720 320" preserveAspectRatio="xMidYMid meet"></svg></div>
+  <div class="narrate" id="narrate">Press <b>Run</b> to stream signatures, or <b>Step</b> to fire one.</div>
+
+  <div class="readout">
+    <div class="cell"><div class="k">Signatures</div><div class="v" id="nOut">0</div></div>
+    <div class="cell"><div class="k">True secret s</div><div class="v" id="sTrue">5</div></div>
+    <div class="cell"><div class="k">Recovered ŝ = gap ÷ 2</div><div class="v" id="sHat">—</div></div>
+    <div class="cell"><div class="k">Leaky?</div><div class="v status open" id="leak">OPEN</div></div>
+  </div>
+
+  <div class="controls">
+    <div class="ctl">
+      <label>secret <span id="sLbl">s = 5</span></label>
+      <input id="sSlider" type="range" min="-8" max="8" step="1" value="5">
+    </div>
+    <label class="switch"><input id="rejChk" type="checkbox"> bound z (rejection sampling)</label>
+    <button class="btn ghost" id="stepBtn">Step</button>
+    <button class="btn" id="runBtn">Run</button>
+    <button class="btn ghost" id="resetBtn">Reset</button>
+  </div>
+
+  <div class="note">
+    The averages jump around at first and settle as signatures pile up — that's the leak growing sharper over time. The green band is what the bound keeps. Switch it on: every dot outside is thrown away (greyed), the accepted dots become an even blue/orange mix, both averages fall to zero, and the gap — the secret — is gone. <i>1-D teaching reduction of <code>z = y + c·s₁</code>: the challenge <code>c</code> is really a ±1 polynomial from <code>H(μ, w₁)</code>, collapsed here to one sign per signature. Real y is uniform, as shown.</i>
+  </div>
+</div>
+
+<script>
+(function(){
+  var narr = document.getElementById('narrate');
+  function fail(msg){ if(narr){ narr.innerHTML = '<b style="color:#dc2626">error:</b> '+msg; } }
+  if (typeof d3 === 'undefined'){ fail('D3 failed to load (check the CDN or your network).'); return; }
+try{
+  var POS='#2563eb', NEG='#ea580c', REJ='#9aa3af', ZONE='#e7f8ef', INK='#141414';
+  var B=16, S_MAX=8, DOMAIN=B+S_MAX, WIN=B-S_MAX, CAP=40000, SHOW=460;
+  // ---- SPEED: raise PER_TICK for faster streaming, lower TICK_MS for a faster frame rate ----
+  var PER_TICK=30, TICK_MS=25;
+
+  var M={l:18,r:18,t:40,b:26}, W=720, H=320;
+  var iw=W-M.l-M.r, ih=H-M.t-M.b, mid=M.t+ih/2;
+  var bandTop=[M.t+4, mid-11], bandBot=[mid+11, H-M.b-4];
+
+  var svg=d3.select('#chart'); var g=svg.append('g');
+  var x=d3.scaleLinear().domain([-DOMAIN,DOMAIN]).range([M.l,M.l+iw]);
+
+  var zoneRect=g.append('rect').attr('y',M.t).attr('height',ih).attr('fill',ZONE).attr('opacity',0);
+  var zoneLabel=g.append('text').attr('y',M.t+11).attr('text-anchor','middle').attr('fill','#059669').attr('font-size',9).attr('opacity',0).text('accepted zone');
+
+  // axis
+  g.append('line').attr('x1',M.l).attr('x2',M.l+iw).attr('y1',mid).attr('y2',mid).attr('stroke','#e5e7eb');
+  var tickG=g.append('g'); [-24,-16,-8,0,8,16,24].forEach(function(t){ if(t<-DOMAIN||t>DOMAIN)return;
+    tickG.append('line').attr('x1',x(t)).attr('x2',x(t)).attr('y1',mid-3).attr('y2',mid+3).attr('stroke','#6b7280');
+    tickG.append('text').attr('x',x(t)).attr('y',mid+14).attr('text-anchor','middle').attr('fill','#6b7280').attr('font-size',9).text(t); });
+  g.append('text').attr('x',M.l+iw).attr('y',mid-6).attr('text-anchor','end').attr('fill','#6b7280').attr('font-size',10).text('z');
+  g.append('text').attr('x',M.l+2).attr('y',M.t+9).attr('fill',POS).attr('font-size',10).text('challenge sign +1');
+  g.append('text').attr('x',M.l+2).attr('y',H-M.b+14).attr('fill',NEG).attr('font-size',10).text('challenge sign −1');
+
+  var dotsG=g.append('g');
+
+  // average markers + bracket
+  var mLineP=g.append('line').attr('stroke',POS).attr('stroke-width',2).attr('opacity',0);
+  var mLineN=g.append('line').attr('stroke',NEG).attr('stroke-width',2).attr('opacity',0);
+  var mDotP=g.append('circle').attr('r',4).attr('fill',POS).attr('opacity',0);
+  var mDotN=g.append('circle').attr('r',4).attr('fill',NEG).attr('opacity',0);
+  var brk=g.append('g').attr('opacity',0);
+  var brkLine=brk.append('line').attr('stroke',INK).attr('stroke-width',1);
+  var brkTL=brk.append('line').attr('stroke',INK).attr('stroke-width',1);
+  var brkTR=brk.append('line').attr('stroke',INK).attr('stroke-width',1);
+  var brkTxt=brk.append('text').attr('text-anchor','middle').attr('fill',INK).attr('font-size',11).attr('font-weight','600');
+
+  var s=5, bound=false, timer=null;
+  var dots=[], n=0, nAcc=0, sumZP=0,nP=0, sumZN=0,nN=0;
+
+  function jitter(band){ return band[0] + Math.random()*(band[1]-band[0]); }
+
+  function sample(){
+    var yv=Math.round((Math.random()*2-1)*B);
+    var c=Math.random()<0.5?-1:1;
+    var z=yv+c*s;
+    var rejected = bound && Math.abs(z)>WIN;
+    if(!rejected){ if(c>0){sumZP+=z;nP++;} else {sumZN+=z;nN++;} nAcc++; }
+    n++;
+    var d={x:z,c:c,rej:rejected,jy: c>0?jitter(bandTop):jitter(bandBot)};
+    dots.push(d); if(dots.length>SHOW) dots.shift();
+    return d;
+  }
+
+  function drawDots(){
+    var sel=dotsG.selectAll('circle').data(dots);
+    sel.enter().append('circle').merge(sel)
+      .attr('r',3).attr('cx',function(d){return x(d.x);}).attr('cy',function(d){return d.jy;})
+      .attr('fill',function(d){return d.rej?REJ:(d.c>0?POS:NEG);})
+      .attr('opacity',function(d){return d.rej?0.4:0.5;});
+    sel.exit().remove();
+  }
+
+  function drawGuides(){
+    zoneRect.attr('x',x(-WIN)).attr('width',x(WIN)-x(-WIN)).attr('opacity', bound?1:0);
+    zoneLabel.attr('x',x(0)).attr('opacity', bound?1:0);
+    var mP = nP>0 ? sumZP/nP : null, mN = nN>0 ? sumZN/nN : null;
+    if(mP!==null){ mLineP.attr('x1',x(mP)).attr('x2',x(mP)).attr('y1',M.t+2).attr('y2',mid).attr('opacity',1);
+      mDotP.attr('cx',x(mP)).attr('cy',mid).attr('opacity',1); } else { mLineP.attr('opacity',0); mDotP.attr('opacity',0); }
+    if(mN!==null){ mLineN.attr('x1',x(mN)).attr('x2',x(mN)).attr('y1',mid).attr('y2',H-M.b-2).attr('opacity',1);
+      mDotN.attr('cx',x(mN)).attr('cy',mid).attr('opacity',1); } else { mLineN.attr('opacity',0); mDotN.attr('opacity',0); }
+    if(mP!==null && mN!==null){
+      var xl=x(mN), xr=x(mP), yB=16, gap=mP-mN;
+      brk.attr('opacity',1);
+      brkLine.attr('x1',xl).attr('x2',xr).attr('y1',yB).attr('y2',yB);
+      brkTL.attr('x1',xl).attr('x2',xl).attr('y1',yB).attr('y2',yB+5);
+      brkTR.attr('x1',xr).attr('x2',xr).attr('y1',yB).attr('y2',yB+5);
+      brkTxt.attr('x',(xl+xr)/2).attr('y',yB-4).text('gap = '+(gap>=0?'+':'')+gap.toFixed(1)+'  (= 2ŝ)');
+    } else brk.attr('opacity',0);
+  }
+
+  function updateReadout(){
+    document.getElementById('nOut').textContent=n.toLocaleString();
+    document.getElementById('sTrue').textContent=s;
+    var el=document.getElementById('sHat');
+    if(nP>0&&nN>0){ var sHat=((sumZP/nP)-(sumZN/nN))/2;
+      el.innerHTML=(sHat>=0?'+':'')+sHat.toFixed(2)+' <small>('+nAcc.toLocaleString()+' accepted)</small>'; }
+    else el.textContent='—';
+    var leak=document.getElementById('leak');
+    if(bound){leak.textContent='NO';leak.className='v status closed';}
+    else {leak.textContent='YES';leak.className='v status open';}
+  }
+
+  function redraw(){ drawDots(); drawGuides(); updateReadout(); }
+
+  function doStep(){ var d=sample(); redraw();
+    var cl=d.c>0?'<b style="color:'+POS+'">+1</b>':'<b style="color:'+NEG+'">−1</b>';
+    var tail = d.rej ? ' — outside the bound, <b>thrown away</b>' : '';
+    narr.innerHTML='signature with challenge sign '+cl+', z = <b>'+d.x+'</b>'+tail; }
+
+  function tick(){ for(var i=0;i<PER_TICK;i++){ if(n>=CAP){stop();return;} sample(); } redraw(); }
+  function run(){ if(timer)return; if(n>=CAP)reset();
+    document.getElementById('runBtn').textContent='Pause'; timer=setInterval(tick,TICK_MS); }
+  function stop(){ if(timer){clearInterval(timer);timer=null;} document.getElementById('runBtn').textContent='Run'; }
+  function reset(){ stop(); dots=[];n=0;nAcc=0;sumZP=0;nP=0;sumZN=0;nN=0;
+    narr.innerHTML='Press <b>Run</b> to stream signatures, or <b>Step</b> to fire one.'; redraw(); }
+
+  document.getElementById('runBtn').addEventListener('click',function(){ if(timer)stop(); else run(); });
+  document.getElementById('stepBtn').addEventListener('click',function(){ if(timer)return; doStep(); });
+  document.getElementById('resetBtn').addEventListener('click',reset);
+  var sSlider=document.getElementById('sSlider');
+  sSlider.addEventListener('input',function(){ s=+sSlider.value; document.getElementById('sLbl').textContent='s = '+s; reset(); });
+  document.getElementById('rejChk').addEventListener('change',function(e){ bound=e.target.checked; reset(); });
+
+  reset();
+}catch(err){ fail(err && err.message ? err.message : String(err)); }
+})();
+</script>
+<script src="/viz/embed-resize.js"></script>
+</body>
+</html>

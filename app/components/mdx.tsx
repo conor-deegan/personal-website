@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { MDXRemote, MDXRemoteProps } from 'next-mdx-remote/rsc';
 import React from 'react';
+import { Viz } from './viz-embed';
 
 function Table({ data }: { data: { headers: string[]; rows: string[][] } }) {
     return (
@@ -122,6 +123,7 @@ const components = {
     code: Code,
     pre: Pre,
     Table: Table,
+    Viz: Viz,
 };
 
 export function CustomMDX(props: MDXRemoteProps) {
