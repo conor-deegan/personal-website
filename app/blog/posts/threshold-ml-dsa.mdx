@@ -1,0 +1,297 @@
+---
+title: 'Threshold signatures & ML-DSA'
+publishedAt: '2026-07-04'
+summary: 'What is threshold signing and why is it hard for ML-DSA?'
+---
+
+## What is a signature and what does "threshold" even mean?
+
+A signature is a number that proves you know some secret key, tied to a specific message, that anyone can check using the matching public key. Normally one person holds the whole private key. Pretty easy thus far.
+
+However, that is a single point of failure: you steal the private key from me and you can forge anything.
+
+**Threshold signing** solves this by spreading the key across several people. You pick a rule like "any two of these three". Then any two of them, working together, can produce one ordinary signature. Any one of them alone cannot, and learns nothing about the secret key. The person checking the signature sees a perfectly normal signature, they cannot tell it was made by a group rather than by one person.
+
+*Note, this is not the same as everyone signing separately. That would result in server signatures stapled together where the verifier then verifies each signature in order to be satisfied. This ends up larger (`n × signature.len()`) and it also reveals to the verifier which parties signed. This is known as a "multi-sig". A threshold signature is a single signature, identical to one produced by a single signer.
+
+## An easy kind of threshold signing
+
+Underneath the hood, some sigatures are just adding and scaling the in the secret key. Roughly something like:
+
+```
+signature = mask + challenge × secret_key
+```
+
+The mask is a fresh random number that hides the key. The challenge is a public number derived from the message (everyone knows it). When this is the case, if you split the key into peices that *add up* to the key, `secret_key = secret_key_split_A + secret_key_split_B + secret_key_split_C`, then each person can do their own bit and you add simply add the results. This is easy to see with a full example. Say the challenge is `5` then pieces are:
+
+```
+Alice: sA = maskA + challenge × kA = 2 + 5×3 = 17 (maskA=2, kA=3)
+Bob:   sB = maskB + challenge × kB = 4 + 5×1 = 9 (maskB=4, kB=1)
+Conor: sC = maskC + challenge × kC = 1 + 5×2 = 11 (maskC=1, kC=2)
+
+combine: s = sA + sB + sC = 17 + 9 + 11 = 37
+```
+
+This is the same as if we performed a single singature without splitting the key:
+
+```
+s = mask + challenge × key
+s = 7 + 5 × 6 = 37
+```
+
+Each person does their part, you add, done. This is how threshold versions of the Schnorr and BLS signatures work.
+
+**Schnorr / FROST.** The example above *is* threshold Schnorr. A Schnorr signature is a pair `(R, s)` where `s = r + c × sk`: the mask `r` is a one-time random *nonce*, `R = g^r` commits to it, and the challenge is `c = H(R, m)`. So `s` literally is the `mask + challenge × secret`, and it splits exactly as above. The only addition is that the nonce is split too, one share per signer:
+
+```
+# nonce (the mask):  r = r_A + r_B + r_C = 2 + 4 + 1 = 7
+# commitment to it:  R = R_A · R_B · R_C   (each R_i = g^(r_i)),   c = H(R, m) = 5
+
+Alice: s_A = r_A + c × k_A = 2 + 5×3 = 17
+Bob:   s_B = r_B + c × k_B = 4 + 5×1 = 9
+Conor: s_C = r_C + c × k_C = 1 + 5×2 = 11
+
+s = s_A + s_B + s_C = 37      ( = r + c × sk = 7 + 5×6 )
+```
+
+The signature is `(R, s)`, and a plain Schnorr verifier accepts it without ever knowing three people were involved. Now, for the attentive folks you may have noticed something. All 3 signers are required to present their share of the signature to create a threshold signature, not say "2 of 3". This is where FROST comes in. FROST works like the example above, but with two practical changes:
+
+First, the key is shared with Shamir secret sharing instead of the plain `sk = k_A + k_B + k_C` split. This is what lets any two of the three sign, rather than needing all three. The cost is that when signers combine their key shares, each share has to be multiplied by a public number called a Lagrange coefficient `λ_i` first - so a signer's response is `s_i = r_i + c × λ_i × k_i`. The `λ_i` is onluy applied to the key, because the key was shared ahead of time and needs these coefficients to be rebuilt.
+
+Second, the nonce is created fresh for every signature by the signers who actually show up. Each of them picks their own random `r_i`, and these are simply added together - no coefficients, because they're generated on the spot rather than reconstructed from an old sharing.
+
+The response is still `mask + challenge × secret` underneath, so everything is still linear and the shares still combine by adding.
+
+**BLS is also linear, and even more straightforward.** A BLS signature is just `σ = H(m)^sk`; no mask, no challenge, no nonce, and fully deterministic. The secret is in the *exponent*, and exponents add:
+
+```
+sk = sk_A + sk_B + sk_C = 3 + 1 + 2 = 6
+
+σ_A = H(m)^3 ,   σ_B = H(m)^1 ,   σ_C = H(m)^2
+
+σ = σ_A · σ_B · σ_C = H(m)^(3+1+2) = H(m)^6 = H(m)^sk
+```
+
+Each signer evaluates on the message and you multiply the results together. In summary:
+
+- **BLS** has no nonce and no challenge. It is deterministic, and combining needs **no interaction at all**: each party produces its share independently, offline, and anyone multiplies them. The linearity is in the exponent.
+- **Schnorr / FROST** carries a fresh nonce on every signature. That nonce has to be jointly generated each time (a commitment round, then a response round), and it has to be guarded against a rushing adversary who picks its nonce after seeing the others in order to steer `R` to forge across concurrent sessions. The linearity is the literal `mask + challenge × secret` from the start.
+
+So we can now see a pattern, in order to decide whether a signature is easy or hard to split we must figure out **is signing linear in the secret?** That is, is the response built only from adding, and from multiplying the secret by public numbers everyone already knows, like the challenge? If yes, the pieces regroup into the whole, exactly as above, and splitting is easy.The one thing that cannot happen is two secrets being multiplied together.
+
+## A hard kind of threshold signing
+
+When two secrets get multiplied together instead, as in ECDSA, splitting the key produces cross-terms that no single person can compute, and there's no way to rearrange them back into per-person pieces. That is what makes ECDSA hard to thresholdise (and one of the key reasons why threshold ECDSA has a history of failure).
+
+ECDSA's response is `s = k⁻¹ × (H + r × sk)`, where `k` is a secret one-time nonce and `H`, `r` are public. Multiply it out: `s = k⁻¹ × H + r × (k⁻¹ × sk)`. The `k⁻¹ × H` term is secret × public, and `r × (…)` is public × secret. Both are linear and both split fine. But `k⁻¹ × sk` multiplies two secrets: the nonce inverse and the key. Split both across the parties and try to form their product from the shares (threshold ECDSA computes exactly this, in its "MtA" step):
+
+```
+k × sk = (k_A + k_B + k_C) × (sk_A + sk_B + sk_C)
+
+       =  k_A·sk_A + k_B·sk_B + k_C·sk_C          # each party has both factors, computes locally
+       +  k_A·sk_B + k_A·sk_C
+       +  k_B·sk_A + k_B·sk_C
+       +  k_C·sk_A + k_C·sk_B                      # cross-terms: no party has both factors
+```
+
+With `k_A=2, k_B=4, k_C=1 (nonce k=7)` and `sk_A=3, sk_B=1, sk_C=2 (key sk=6)`:
+
+```
+diagonal     : 2·3 + 4·1 + 1·2                        = 12    # each party alone
+cross-terms  : 2·1 + 2·2 + 4·3 + 4·2 + 1·3 + 1·1      = 30    # need interaction
+total        : 12 + 30 = 42       ( = 7 × 6 )
+```
+
+The cross-terms are the problem: `k_B·sk_A` is Bob's nonce times Alice's key, and Bob holds `k_B` but not `sk_A` while Alice holds `sk_A` but not `k_B`, so neither can compute it. To get those cross-terms the parties have to run an interactive multiplication protocol (per pair, per signature, based on [oblivious transfer](https://en.wikipedia.org/wiki/Oblivious_transfer) or [Paillier](https://en.wikipedia.org/wiki/Paillier_cryptosystem)), which is what makes threshold ECDSA expensive and more complicated. And that is before the second problem: turning a secret-shared nonce into k⁻¹ in the first place, which is also non-linear.
+
+In summary, the easy cases are exactly the ones that are linear in the secret: the secret is only ever added to other things or multiplied by public numbers. That is what lets each signer work on their own share and have the parts combine into the whole — whether you combine them by adding (Schnorr) or by multiplying (BLS). ECDSA is not linear in the secret, because it multiplies two secret values together, `k⁻¹` and `sk`. Expanding that product forces cross-terms like `k_B·sk_A` that mix one signer's value with another's, and no rearrangement separates them back into per-person pieces. Scaling a secret by a public number keeps it splittable; multiplying two secrets does not.
+
+
+At this point we are >~1.5k words in and I have not even mentioned ML-DSA, so let's do that.
+
+## ML-DSA signing
+
+ML-DSA actually looks a lot like the "easy" examples, BLS and Schnorr. Its response is `z = mask + challenge × secret`, which we know is linear in the secret. So is threshold ML-DSA easy too? Sadly not (I guess that's why this post exists), it's hard. But the reason it's hard has absolutely nothing to do with linearity.
+
+To sign a message with ML-DSA you do three things*:
+
+```
+1. Pick a fresh random mask (a short number). From the mask alone, compute a commitment, w. (w depends on the mask, not the secret)
+2. Make the challenge by hashing w together with the message. Once w is fixed, the challenge is a fixed public number.
+3. Compute the response: z = mask + challenge × secret
+```
+
+This is the commit–challenge–respond pattern. The `z` in step 3 is the response, and is proof that you know the secret. We will come back to `w` from step 1 in a bit but for now let's chat about `z`.
+
+### The leak
+
+Let's pull apart `z = mask + challenge × secret`. The `mask` is random and averages around zero. So on average `z` doesn't sit at zero, it sits at `challenge × secret`, and the challenge is public. Every signature is a reading of the secret with the random mask added on top as sort of "blur". If you collect enough readings the blur averages away, leaving the secret.
+
+Here it is with real numbers. So far I've written `z` as one number, but it's really a list of numbers (a vector)*. Each entry in the list is computed the same way: `entry = mask + challenge × secret`, with its own random mask. So we can just look at one entry on its own and see what happens.
+
+Taking one entry, suppose the secret's part of it works out to +3, and the random mask for that entry is a whole number somewhere between −10 and +10. Then the entry z = mask + 3 is:
+
+```
+mask        : random in [−10 .. +10]     average = 0
+z = mask + 3: random in [ −7 .. +13]     average = +3
+```
+
+The range has shifted up by `+3`, and that `+3` is the secret's contribution to this entry. A single signature doesn't reveal it, because one value just looks random. But if you collect many signatures the random mask cancels to 0 and the +3 is left behind. Do that for every entry and you will recover the whole secret. So `z` can't be published directly because each signature leaks a little more of the key.
+
+You might be wondering why plain Schnorr, which has the identical `z = mask + challenge × secret`, doesn't leak this way. The difference is the mask. Schnorr works modulo a large prime and draws its mask uniformly from that whole range, so adding the secret's shift just wraps around and leaves `z` looking completely random. The mask hides the secret perfectly, and `z` can always be published.
+
+ML-DSA can't do that. Its security depends on `z` staying a small number, so the mask has to be drawn from a small bounded range instead. A small mask can't wrap around, so it can't fully hide the shift and thus the secret leaks through, exactly as we saw above. So ML-DSA can't publish every `z`. It has to check each one and throw away the ones that would leak. That check is called **rejection sampling**.
+
+## Rejection Sampling in ML-DSA
+
+So with ML-DSA in order not to leak the secret over time, we don't publish every `z`. We only publish the ones that land in a "safe zone" where a "safe zone" is chosen such that a published `z` never gives anything away.
+
+Again taking one entry, let's define the safe zone. The challenge is fixed, so the secret's shift on this entry is one fixed number, say `+3`. As an attacker you don't know its exact value, but you do know it can't be bigger than `3` because the shift is `challenge × secret`, the challenge is public, and ML-DSA publicly caps how large the secret can be, so the shift always sits somewhere in say `[−3 .. +3]`. The mask is random from a small bounded range, say `[−10 .. +10]`. The safe zone is that mask range shrunk by the largest possible shift: `10 − 3 = 7`, giving `[−7 .. +7]`.
+
+**The rule**: only publish `z` if it lands inside `[−7 .. +7]`. Otherwise throw the whole attempt out and start again with a fresh mask. Here are a few masks for shift `+3`:
+
+```
+mask = +10 → z = +13 -> outside [−7..+7] → THROW AWAY, retry
+mask = +7 → z = +10  -> outside [−7..+7] → THROW AWAY, retry
+mask = +5 → z = +8   -> outside [−7..+7] → THROW AWAY, retry
+mask = +4 → z = +7   -> inside -> keep & publish
+mask = 0 → z = +3    -> inside -> keep & publish
+mask = −2 → z = +1   -> inside -> keep & publish
+mask = −10 → z = −7  -> inside -> keep & publish
+```
+
+Here's why this cleans up the leak, the leak came from the centre of `z` moving with the secret: shift `+3` pushed the centre to `+3`. But once you only keep values inside `[−7 .. +7]`, the published `z` is an even spread across `[−7 .. +7]` centred on `0` and it comes out as the same even spread whether the shift was `+3`, `−3`, or `0`. Every shift produces an identical distrubtion of `z`, so there's no longer a centre that leaks the secret. Average a million published `z`'s and you get `0`, thus as an attacker, you learning nothing.
+
+The visualisation shows this directly: with rejection off, the published values drift with the secret and it leaks; turn rejection on and the drift disappears.
+
+<Viz src="/viz/mldsa-z-leak.html" title="ML-DSA z-bound leak demo" />
+
+This rejection sampling is one of the reasons threshold singing is hard. Before we look at the second, here is a quick summary:
+
+> Two things to remember
+> 1. The thrown-away `z` values are the leaky ones, they are the attempts that landed out near the edge, leaking our secret over time. That is why they are thrown away.
+> 2. When you sign alone, a thrown-away `z` is computed in private and deleted. Nobody ever sees it. 
+
+## The second "check-and-throw-away" rule
+
+There is a second check you do before you publish a signature `z`. Recall `w`, the commitment, from step 1 of signing.
+
+A verifier verifies that your signature `z` proves you know some secret without learning your secret. To do they, they take your `z` and re-derive `w` from it, then check it matches the `w` your challenge was build from. If they match, you must know the secret. I explain this in more detail [here](https://www.projecteleven.com/blog/post-quantum-digital-signatures--the-lattice-city---what-is-a-lattice-and-how-does-ml-dsa-work).
+
+The issue is that a verifier cannot rederive `w` exectly. They get `w` plus a tiny offset. And when `w` is stored, it is rounded into coarse buckets. Almost always the offset doesn't impact this rounding but if `w` happens to sit right on the edge of a bucket, the tiny offet can tip it into the next bucket. When that happens, the verifier's rederived `w` disgrees with the signers, and a perfectly good signature is rejected.
+
+So the second rule: before publishing `z`, check that `w` does not sit too close to a bucket edge. If any is too-close to survive the offset, throw this attempt away too and start again. Here is an exmaple with buckets of width 100 and an offset of up to 5:
+
+```
+w coordinate = 1240 : 40 below the edge at 1200, 60 below the edge at 1300
+                      an offset of ±5 cannot reach either edge → safe, keep
+
+w coordinate = 1298 : only 2 below the edge at 1300
+                      an offset of +5 tips it past 1300 -> fragile so reject
+```
+
+So signing has two rejcetion rules: one on the size of `z`, and one on whether the commitment `w` is sitting near a rounding edge.
+
+## Why splitting it across multiple people is hard
+
+Finally, we can dive into why threshold singing in ML-DSA is hard! If we now split our signing across Alice, Bob, and Conor:
+
+```
+z = zA + zB + zC
+w = wA + wB + wC
+
+where:
+zA = maskA + challenge × keypieceA (and the same for B & C)
+wA = commitment from maskA         (and the same for B & C)
+```
+
+**Rule 1 (the size of `z`) is about the total.** Alice only knows `zA`. She has no way to know whether the total `zA + zB + zC` lands in our safe zone, she would need to know Bob's and Conor's pieces too. So to make the decision at all, the three of them have to share their pieces and add them to check `z` is safe to share.
+
+And herein lies the problem; to check the total Alice must share `zA` but `zA` is potentially leaky. If the total (`zA + zB + zC`) then fails the check and the attempt is binned, Alice has just shown Bob and Conor a leaky piece of information - one which, in the single signer model, would have just been deleted unseen. A dishonest Bob simply collects Alice's revealed pieces from the binned attempts, averages them, and recovers her key share. It's the same leak I demonstrated above, but focused on Alice's share specifically.
+
+> Simply, Alone, you look at the total in private, and the leaky attempts die unseen. Split up, you cannot look at the total without first revealing the pieces and the binned attempts are the leaky ones. The decision needs the total; the total needs the reveal; the reveal leaks information.
+
+This is clear in the following visualisation:
+
+<Viz src="/viz/ml-dsa-threshold-abort.html" title="ML-DSA threshold abort" />
+
+**Rule 2 (the commitment near an edge) is harder than for a single signer.** The check asks whether the combined `w = wA + wB + wC` sits too close to a bucket edge. This cannot be answered without combining the shares. Alice knowing her `wA` is comfortably mid-bucket, and Bob and Conor knowing the same about their shares, tells them nothing about where `wA + wB + wC` lands when summed. They can add up to sit right on an edge even when no individual piece does. Thus, there is no way to answer it except on the combined `w`.
+
+That said, the two rules matter for very different reasosns. Rule 1 is a **security** rule: `zA` carries Alice's secret (`zA = maskA + challenge × keypieceA`), so revealing the pieces to check the total is what leaks it. Rule 2 is a **correctness** rule: it doesn't protect the secret at all, it only makes sure an honest signature verifies. The reason it isn't a security concern is that `w` doesn't contain the secret in the first place, it's built from the mask alone (recall step 1: `w` depends on the mask, not the secret). Whether `w` sits near a bucket edge is purely a fact about the masks, so a `w` that fails this check is perfectly safe to reveal, it just wouldn't round cleanly at the verifier and the signature would be rejected as invalid.
+
+## Okay so how do we do threshold ML-DSA?
+
+Finally, we can now talk about how we can still do threshold signing with ML-DSA despite the challenges discussed. Here is what we need to solve; signing needs the rejection sampling rules, the rejection sampling rules need the total(s), and getting the total(s) means revealing pieces before we know whether the attempt will survive. Fortuneately, a recent paper [*Efficient Threshold ML-DSA*](https://eprint.iacr.org/2026/013) (Celi, del Pino, Espitau, Niot, Prest) proposed a neat solution for groups of up to six, with a handful of moves that all serve one goal: **make every piece safe to reveal *before* it is revealed.** Let's walk through each of them.
+
+### Move 1: give each signer a short piece they own outright
+
+Recall the safe zone only works when the secret's shift is small (we shrink the mask range by the largest possible shift, so a large shift leaves no safe zone at all). For Alice to run rejection on her *own* `zA` in private, her key piece has to be short.
+
+The obvious split we dicussed already, `key = kA + kB + kC`, doesn't give us that with Shamir sharing: reconstructing a Shamir share means multiplying by a Lagrange coefficient, and those coefficients are large, so the piece each signer works with is no longer short. (This is the same Lagrange-coefficient problem that pushes other lattice threshold schemes to drop rejection entirely). So instead of splitting the key, we *build* it out of small pieces. Make one small key per pair of signers and hand it to exactly that pair:
+
+```
+key = kAB + kAC + kBC
+Alice holds { kAB, kAC }
+Bob   holds { kAB, kBC }
+Conor holds { kAC, kBC }
+```
+
+Any two signers between them hold all three small keys, so they can add them up to reconstruct the key. Any one signer is always missing one (Bob can't see `kAC`), so no individual can. When two signers actually sign, they divide the three keys between them so each key is used exactly once. For Alice and Conor that means one of them takes two keys and the other takes one; say Alice signs with `kAB + kAC` and Conor with `kBC`. Each signer's piece is just the sum of the handful of short keys it was handed, so it stays short.
+
+### Move 2: split the throw-away into two stages
+
+Rather than one rejection sampling decision that needed the total, we split it into two:
+
+**Stage one, private, per signer.** Each signer runs the safe-zone rule (Rule 1) on their *own* `z{i}`. The safe zone is the same idea as before, the mask range shrunk by the largest shift the secret can cause. The catch from Section 4 was that this only works when that shift is small, and the shift is `challenge × keypiece`. So it hinges entirely on the key piece being short, which is what Move 1 got us. A short piece means a small shift, means the safe zone stays wide, which means rejection passes often enough to be practical. A `z{i}` that lands in the zone is already safe to reveal and it gives nothing away. A `z{i}` that falls outside is binned privately and never leaves the signer. Nobody ever reveals a binned `z{i}`!
+
+**Stage two, public, on the total.** Add up the `z{i}`s that passed and run the real ML-DSA checks on the combined `z`: the size check, and the commitment rounding check (Rule 2) that could only ever be answered on the total. This runs in the open, and it's safe, because every piece in the sum already cleared stage one and carries no secret. Nothing binned is ever shown; nothing shown was ever leaky.
+
+Notice the division of labour: stage one is the **security** step (it hides the secret, and it's local), stage two is the **correctness** step (it makes the combined signature verify, and it's global). The reason we could push security down to each signer but not correctness is the same as before, Rule 1 could be made per-signer once the pieces were short; Rule 2 lives on the total no matter what.
+
+### Move 3: make the early w reveal safe too
+
+There is one loose here. To build the shared challenge, everyone has to reveal their `w{i}` and add them into `w = wA + wB + wC` *early*, before stage-one rejection has decided anything. So even with binned `z{i}`s kept private, the `w{i}` from a binned attempt still get shown.
+
+You might think that's fine, since `wA` only commits to Alice's mask, not her key. And for a single attempt it is fine, one `wA` reveals nothing. However, whether Alice's `zA` gets binned depends on her mask *and* her key piece together (`zA = maskA + challenge × keypieceA`, and it's binned when that lands outside the safe zone). So her key piece tilts *which* masks survive and which get thrown out and `wA` is built from that same mask. Put those together: the pile of `wA`s from *binned* attempts isn't a random pile, it's the masks her key pushed over the edge.
+
+For example, suppose the safe zone is `[−7 .. +7]` and Alice's key contributes a shift of `+3`, so `zA = maskA + 3`. A mask of `+5` gives `zA = +8`, over the edge, binned. A mask of `−5` gives `zA = −2`, inside, kept. If her key had instead contributed `−3`, those two masks would swap which side they land on. So the set of masks binned depend on the secret, and since `wA` is made from the mask, the binned `wA`s carry that same leak. One is safe but after a few thousand we see the exact same leak we saw with `zA` above.
+
+Luciky, the fix is straightforward: each signer adds a little extra random noise to their `w{i}` (technically, making it a full [MLWE](https://en.wikipedia.org/wiki/Learning_with_errors) sample rather than a bare commitment). With the noise, each `w{i}` is provably indistinguishable from pure random numbers no matter which masks produced it, so even a secret-tilted pile of them gives nothing away.
+
+### Move 4: keep the success rate up
+
+Per-signer rejection has a cost. All the signers share one challenge (built from the combined `w`), so an attempt only counts if *every* signer's `z{i}` passes rejection on that same attempt. If any one signer bins it, the whole attempt is gone and they all restart.
+
+That failure compounds fast. If each signer keeps, say, 3 attempts in 4 on their own, then two signers keep the *same* attempt just over half the time, three signers about two in five, and by six you're down to under one in five. The more signers, the rarer it is that everyone passes together. The paper implements two mechanisms to increase the chance of success:
+
+**The first is a better-shaped safe zone.** So far the safe zone has been a range on each entry of `z`: every entry has to sit inside its bound, or the attempt is rejected. That is ML-DSA's rule, and across all the entries at once it forms a box.
+
+But a box is a wasteful shape because it rejects the attempt if *any single entry* falls outside its bound. With hundreds of entries, that is a hard bar to pass and one unlucky entry out of hundreds and the whole attempt has to be restarted, even if every other entry was tiny.
+
+The paper swaps the box for a ball. Instead of testing each entry against its own bound, it tests them *together*: square all the entries, add them up, and accept if that total is under a limit. Now a single entry being large is fine, as long as the others are small enough to keep the total down. The ball stops throwing away attempts that a box would have rejected with one large entry.
+
+**The second is brute force:** the signers run many attempts in parallel and keep the first one that everybody passes. So even a low per-attempt rate just costs a little more bandwidth, rather than a failed signature.
+
+### What you end up with
+
+Put the four moves together and the output is a completely ordinary ML-DSA signature(~2.4 kB), checked by a standard ML-DSA verifier. The verifier can't tell a group produced it at all. The scheme stays secure even if every signer but one is dishonest. It also needs no trusted setup, the signers can generate the shared key between themselves, with no dealer ever holding the whole key. Or, if you already run a deployed ML-DSA key, you can split that existing key across a group after the fact without changing its public key, so nothing downstream has to be re-issued.
+
+It's also pretty quick, the signing runs in milliseconds locally, and under a second across a network.
+
+The biggest limitiation is group size and arises from what we do in Move 4 above. As the group grows there are more small keys to share, each signer's piece gets a little longer, its pass rate falls, and the number of parallel attempts has to climb. Up to six signers it stays reasonable but beyond that the cost rises steeply (seven already runs to megabytes per signer). So if you only need a small threshold set (2-of-2, 2-of-3, 3-of-5, etc), you will be fine and likely have a drop-in post-quantum replacement for ECDSA/EdDSA.
+
+Please note that at the time of writing this blog, the [code](https://github.com/Threshold-ML-DSA/Threshold-ML-DSA) referenced in the paper has not been audited and is not recommended for production use.
+
+## Wrapping up
+
+Threshold signing is easy when signing is linear in the secret: split the key into pieces that add up, everyone does their part, you add up the result. This is how both BLS and Schnorr work, and so, on paper, does ML-DSA, its response `z = mask + challenge × secret` is linear.
+
+What makes ML-DSA hard isn't the linear algebra, it's the rejection sampling. To keep signatures small, ML-DSA can't publish every `z`, it has to bin the ones that would leak the key. On your own that's trivial: you check in private and the binned attempts are never seen. Split across a group it isn't, because the throw-away decision is about the *combined* `z`, and you can't judge the total without each signer revealing their piece first. The decision needs the total; the total needs the reveal; the reveal is a leak.
+
+The solution proposed by Celi, del Pino, Espitau, Niot and Prest, is to make sure every piece is already safe by the time it is revealed. Give each signer a short piece of the key it owns outright, so it can run the rejection sampling on its own piece in private then check only the *size* of the combined signature in the open which is the correctness check, done globally, on pieces that are already safe. They also propose a better-shaped safe zone and a batch of parallel attempts keep the success rate up, and a little noise on each commitment makes the one unavoidable early reveal safe too.
+
+The result is a standard ML-DSA signature; same size, same verifier, indistinguishable from one a single signer produced, created by a group where no one ever held the whole key, and secure even if all but one of them is compromised.
+
+There's plenty this post skipped; the distributed key generation, retrofitting existing keys, the exact rejection geometry, the security proof. It's all in the paper.
+
+*yes, yes it's more complex in reality.
