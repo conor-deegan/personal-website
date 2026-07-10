@@ -178,7 +178,7 @@ There is a second check you do before you publish a signature `z`. Recall `w`, t
 
 A verifier verifies that your signature `z` proves you know some secret without learning your secret. To do this, they take your `z` and re-derive `w` from it, then check it matches the `w` your challenge was built from. If they match, you must know the secret. I explain this in more detail [here](https://www.projecteleven.com/blog/post-quantum-digital-signatures--the-lattice-city---what-is-a-lattice-and-how-does-ml-dsa-work).
 
-The issue is that a verifier cannot rederive `w` exactly. They get `w` plus a tiny offset. And when `w` is stored, it is rounded into coarse buckets. Almost always the offset doesn't impact this rounding but if `w` happens to sit right on the edge of a bucket, the tiny offset can tip it into the next bucket. When that happens, the verifier's rederived `w` disagrees with the signer's, and a perfectly good signature is rejected.
+The issue is that a verifier cannot rederive `w` exactly. They get `w` plus a tiny offset (that offset depends on part of the secret key). And when `w` is stored, it is rounded into coarse buckets. Almost always the offset doesn't impact this rounding but if `w` happens to sit right on the edge of a bucket, the tiny offset can tip it into the next bucket. When that happens, the verifier's rederived `w` disagrees with the signer's, and a perfectly good signature is rejected.
 
 So the second rule: before publishing `z`, check that `w` does not sit too close to a bucket edge. If any is too-close to survive the offset, throw this attempt away too and start again. Here is an example with buckets of width 100 and an offset of up to 5:
 
@@ -190,7 +190,7 @@ w coordinate = 1298 : only 2 below the edge at 1300
                       an offset of +5 tips it past 1300 -> fragile so reject
 ```
 
-So signing has two rejection rules: one on the size of `z`, and one on whether the commitment `w` is sitting near a rounding edge.
+So signing has two rejection rules: one on the size of `z`, and one on `w`. Both are protecting the secret. ML-DSA's key has two halves (`s1` and `s2`). The first lives inside `z`, and Rule 1 keeps it hidden, exactly as we saw. The second half shows up in how close `w` sits to a bucket edge, because that secret-dependent offset is what nudges `w` towards an edge or away from it. ML-DSA throws away any attempt where `w` lands too near an edge. This does two things at once: it makes sure the signature is verifiable, and it keeps `s2` hidden. If you drop the check, each signature you publish leaks a little about `s2`, and an attacker who collects enough can reconstruct it.
 
 ## Why splitting it across multiple people is hard
 
@@ -217,7 +217,7 @@ This is clear in the following visualisation:
 
 **Rule 2 (the commitment near an edge) is harder than for a single signer.** The check asks whether the combined `w = wA + wB + wC` sits too close to a bucket edge. This cannot be answered without combining the shares. Alice knowing her `wA` is comfortably mid-bucket, and Bob and Conor knowing the same about their shares, tells them nothing about where `wA + wB + wC` lands when summed. They can add up to sit right on an edge even when no individual piece does. Thus, there is no way to answer it except on the combined `w`.
 
-That said, the two rules matter for very different reasons. Rule 1 is a **security** rule: `zA` carries Alice's secret (`zA = maskA + challenge × keypieceA`), so revealing the pieces to check the total is what leaks it. Rule 2 is a **correctness** rule: it doesn't protect the secret at all, it only makes sure an honest signature verifies. The reason it isn't a security concern is that `w` doesn't contain the secret in the first place, it's built from the mask alone (recall step 1: `w` depends on the mask, not the secret). Whether `w` sits near a bucket edge is purely a fact about the masks, so a `w` that fails this check is perfectly safe to reveal, it just wouldn't round cleanly at the verifier and the signature would be rejected as invalid.
+Both of these rules protect the secret. Rule 1 protects the first half: `zA` carries part of Alice's secret, so revealing rejected pieces leaks it. Rule 2 protects the second half, `s2`. The quantity it checks depends on `s2`, so if you skip or weaken the check, each signature you publish leaks a little about `s2`, and an attacker who gathers enough signatures can recover it. This isn't theoretical, check out [this paper](https://eprint.iacr.org/2026/1386).
 
 ## Okay so how do we do threshold ML-DSA?
 
@@ -246,7 +246,7 @@ In single-signer ML-DSA, Rule 1 did two jobs at once: hide the secret, and keep 
 
 **Stage two, public, on the total.** Add up the `z{i}`s that passed and run the real ML-DSA checks on the combined `z`: the size check, this is the original Rule 1, back on the total, and the commitment rounding check (Rule 2), both of which could only ever be answered on the total. This runs in the open, and it's safe, because every piece in the sum already cleared stage one and carries no secret. Nothing binned is ever shown; nothing shown is ever leaky.
 
-Notice the division of labour: stage one is the **security** step (it hides the secret, and it's local), stage two is the **correctness** step (it makes the combined signature verify, and it's global). The reason we could push security down to each signer but not correctness is the same as before: once the pieces are short, each signer can make their own `z{i}` safe to reveal locally, but whether the combined signature is valid (Rule 1's size bound and Rule 2's rounding) can only be judged on the total.
+Notice the division of labour. Stage one is where the secret gets protected: each signer rejects its own piece in private, so nothing leaky is ever revealed. Stage two doesn't protect anything new, it only confirms the combined signature came out the right size and is valid to pass a standard ML-DSA verifier. It can run in the open because every piece in the sum already cleared stage one. Protecting the secret happens per signer; checking that the combined signature fits can only happen on the total.
 
 ### Move 3: make the early w reveal safe too
 
@@ -274,7 +274,9 @@ The paper gives each signer a ball instead of a box for their *own* stage-one re
 
 ### What you end up with
 
-Put the four moves together and the output is a completely ordinary ML-DSA signature (~2.4 kB), checked by a standard ML-DSA verifier. The verifier can't tell a group produced it at all. The scheme stays secure even if every signer but one is dishonest. It also needs no trusted setup, the signers can generate the shared key between themselves, with no dealer ever holding the whole key. Or, if you already run a deployed ML-DSA key, you can split that existing key across a group after the fact without changing its public key, so nothing downstream has to be re-issued.
+Put the four moves together and the output is an ordinary ML-DSA signature (~2.4 kB): a standard ML-DSA verifier accepts it, unmodified, exactly as it would a "single-signer" one. One caveat is that although the signatures produced are valid ML-DSA signatures, they roughly follow a Gaussian distribution, whereas in standard "single-signer" ML-DSA they follow a uniform distribution so it is quite easy to distinguish signatures made from this threshold scheme vs a standard ML-DSA "single-signer".
+
+The scheme stays secure even if every signer but one is dishonest. It also needs no trusted setup, the signers can generate the shared key between themselves, with no dealer ever holding the whole key. Or, if you already run a deployed ML-DSA key, you can split that existing key across a group after the fact without changing its public key, so nothing downstream has to be re-issued.
 
 It's also pretty quick, the signing runs in milliseconds locally, and under a second across a network.
 
@@ -288,10 +290,12 @@ Threshold signing is easy when signing is linear in the secret: split the key in
 
 What makes ML-DSA hard isn't the linear algebra, it's the rejection sampling. To keep signatures small, ML-DSA can't publish every `z`, it has to bin the ones that would leak the key. On your own that's trivial: you check in private and the binned attempts are never seen. Split across a group it isn't, because the throw-away decision is about the *combined* `z`, and you can't judge the total without each signer revealing their piece first. The decision needs the total; the total needs the reveal; the reveal is a leak.
 
-The solution proposed by Celi, del Pino, Espitau, Niot and Prest, is to make sure every piece is already safe by the time it is revealed. Give each signer a short piece of the key it owns outright, so it can run the rejection sampling on its own piece in private then check only the *size* of the combined signature in the open which is the correctness check, done globally, on pieces that are already safe. They also propose a better-shaped safe zone and a batch of parallel attempts keep the success rate up, and a little noise on each commitment makes the one unavoidable early reveal safe too.
+The solution proposed by Celi, del Pino, Espitau, Niot and Prest, is to make sure every piece is already safe by the time it is revealed. Give each signer a short piece of the key it owns outright, so it can run the rejection sampling on its own piece in private, then check that the combined signature is the right size and is valid in the open, on pieces that are already safe. They also propose a better-shaped safe zone and a batch of parallel attempts keep the success rate up, and a little noise on each commitment makes the one unavoidable early reveal safe too.
 
-The result is a standard ML-DSA signature; same size, same verifier that can't tell it from one a single signer produced, created by a group where no one ever held the whole key, and secure even if all but one of them is compromised.
+The result is a standard ML-DSA signature; same size, accepted by the same verifier as one a single signer would produce (though, as noted above, not statistically identical to it), created by a group where no one ever held the whole key, and secure even if all but one of them is compromised.
 
 There's plenty this post skipped; the distributed key generation, retrofitting existing keys, the exact rejection geometry, the security proof. It's all in the paper.
+
+> Edit 10/07/26: Thank you to Guilhem Niot for feedback prompting two clarifications now reflected in the post above: (1) the second rejection rule is a security check, not just a correctness one, since it protects `s2`; and (2) these threshold signatures are accepted by any standard ML-DSA verifier but are not distributionally identical to single-signer ML-DSA signatures, so the two can be told apart.
 
 *yes, yes it's more complex in reality.
