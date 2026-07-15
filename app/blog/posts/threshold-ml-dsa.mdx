@@ -183,7 +183,7 @@ The issue is that a verifier cannot rederive `w` exactly. They get `w` plus a ti
 So the second rule: before publishing `z`, check that `w` does not sit too close to a bucket edge. If any is too-close to survive the offset, throw this attempt away too and start again. Here is an example with buckets of width 100 and an offset of up to 5:
 
 ```
-w coordinate = 1240 : 40 below the edge at 1200, 60 below the edge at 1300
+w coordinate = 1240 : 40 above the edge at 1200, 60 below the edge at 1300
                       an offset of ±5 cannot reach either edge → safe, keep
 
 w coordinate = 1298 : only 2 below the edge at 1300
@@ -276,7 +276,7 @@ The paper gives each signer a ball instead of a box for their *own* stage-one re
 
 Put the four moves together and the output is an ordinary ML-DSA signature (~2.4 kB): a standard ML-DSA verifier accepts it, unmodified, exactly as it would a "single-signer" one. One caveat is that although the signatures produced are valid ML-DSA signatures, they roughly follow a Gaussian distribution, whereas in standard "single-signer" ML-DSA they follow a uniform distribution so it is quite easy to distinguish signatures made from this threshold scheme vs a standard ML-DSA "single-signer".
 
-The scheme stays secure even if every signer but one is dishonest. It also needs no trusted setup, the signers can generate the shared key between themselves, with no dealer ever holding the whole key. Or, if you already run a deployed ML-DSA key, you can split that existing key across a group after the fact without changing its public key, so nothing downstream has to be re-issued.
+The scheme stays secure even if all but one of the participating signers are dishonest. It also needs no trusted setup, the signers can generate the shared key between themselves, with no dealer ever holding the whole key. Or, if you already run a deployed ML-DSA key, you can split that existing key across a group after the fact without changing its public key, so nothing downstream has to be re-issued.
 
 It's also pretty quick, the signing runs in milliseconds locally, and under a second across a network.
 
@@ -288,14 +288,16 @@ Please note that at the time of writing this blog, the [code](https://github.com
 
 Threshold signing is easy when signing is linear in the secret: split the key into pieces that add up, everyone does their part, you add up the result. This is how both BLS and Schnorr work, and so, on paper, does ML-DSA, its response `z = mask + challenge × secret` is linear.
 
-What makes ML-DSA hard isn't the linear algebra, it's the rejection sampling. To keep signatures small, ML-DSA can't publish every `z`, it has to bin the ones that would leak the key. On your own that's trivial: you check in private and the binned attempts are never seen. Split across a group it isn't, because the throw-away decision is about the *combined* `z`, and you can't judge the total without each signer revealing their piece first. The decision needs the total; the total needs the reveal; the reveal is a leak.
+What makes ML-DSA hard isn't the linear algebra, it's the rejection sampling. Its mask has to stay small (that is what keeps signatures small), and a small mask can't fully hide the secret, so ML-DSA can't publish every `z` - it has to bin the ones that would leak the key. On your own that's trivial: you check in private and the binned attempts are never seen. Split across a group it isn't, because the throw-away decision is about the *combined* `z`, and you can't judge the total without each signer revealing their piece first. The decision needs the total; the total needs the reveal; the reveal is a leak.
 
 The solution proposed by Celi, del Pino, Espitau, Niot and Prest, is to make sure every piece is already safe by the time it is revealed. Give each signer a short piece of the key it owns outright, so it can run the rejection sampling on its own piece in private, then check that the combined signature is the right size and is valid in the open, on pieces that are already safe. They also propose a better-shaped safe zone and a batch of parallel attempts keep the success rate up, and a little noise on each commitment makes the one unavoidable early reveal safe too.
 
-The result is a standard ML-DSA signature; same size, accepted by the same verifier as one a single signer would produce (though, as noted above, not statistically identical to it), created by a group where no one ever held the whole key, and secure even if all but one of them is compromised.
+The result is a standard ML-DSA signature; same size, accepted by the same verifier as one a single signer would produce (though, as noted above, not statistically identical to it), created by a group where no one ever held the whole key, and secure even if all but one of the participating signers are compromised.
 
 There's plenty this post skipped; the distributed key generation, retrofitting existing keys, the exact rejection geometry, the security proof. It's all in the paper.
 
-> Edit 10/07/26: Thank you to Guilhem Niot for feedback prompting two clarifications now reflected in the post above: (1) the second rejection rule is a security check, not just a correctness one, since it protects `s2`; and (2) these threshold signatures are accepted by any standard ML-DSA verifier but are not distributionally identical to single-signer ML-DSA signatures, so the two can be told apart.
+> Edit 10/07/26: Thank you to [Guilhem Niot](https://www.linkedin.com/in/guilhem-niot/) for feedback prompting two clarifications now reflected in the post above: (1) the second rejection rule is a security check, not just a correctness one, since it protects `s2`; and (2) these threshold signatures are accepted by any standard ML-DSA verifier but are not distributionally identical to single-signer ML-DSA signatures, so the two can be told apart.
+
+> Edit 15/07/26: Thank you to [Louis Tajan](https://www.linkedin.com/in/louis-tajan-477b4a19b/) for feedback prompting two clarifications now reflected above: (1) the scheme stays secure even if all but one of the *participating* signers are dishonest, not all `n` potential parties; and (2) it is the small mask (needed to keep signatures small) that forces rejection sampling, rather than the small signature size directly.
 
 *yes, yes it's more complex in reality.
