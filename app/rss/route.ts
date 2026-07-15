@@ -1,6 +1,15 @@
 import { baseUrl } from './../sitemap';
 import { getBlogPosts } from './../blog/utils';
 
+function escapeXml(unsafe: string) {
+    return unsafe
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&apos;');
+}
+
 export async function GET() {
     const allBlogs = await getBlogPosts();
 
@@ -14,9 +23,9 @@ export async function GET() {
         .map(
             (post) =>
                 `<item>
-          <title>${post.metadata.title}</title>
+          <title>${escapeXml(post.metadata.title)}</title>
           <link>${baseUrl}/blog/${post.slug}</link>
-          <description>${post.metadata.summary || ''}</description>
+          <description>${escapeXml(post.metadata.summary || '')}</description>
           <pubDate>${new Date(post.metadata.publishedAt).toUTCString()}</pubDate>
         </item>`,
         )
