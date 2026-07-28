@@ -1,0 +1,108 @@
+---
+title: 'Trusting trust, and how to fight back'
+publishedAt: '2026-07-24'
+summary: 'Ken Thompson showed you cannot trust code you did not write yourself. Here are the defenses that actually work against his attack.'
+---
+
+## Reflections on Trusting Trust
+
+In 1984 Ken Thompson accepted the Turing Award and used the lecture to explain, in about three pages, why you can't trust software. The paper is [*Reflections on Trusting Trust*](https://www.cs.cmu.edu/~rdriley/487/papers/Thompson_1984_ReflectionsonTrustingTrust.pdf), and if you haven't alreay done so, read it. It's excellent and nasty all at the same time.
+
+It basically boils down to the conclusion that **you can't trust code that you did not totally create yourself**.
+
+This post explains the attack proposed by Thompson, and looks at some modern tools that (try to) fight back.
+
+## The attack
+
+The attack targets a compiler in 3 steps:
+
+**Step one: a program that prints itself.** You can write a program whose output is its own source code. This is called a [quine](https://en.wikipedia.org/wiki/Quine_(computing)). They have some interesting properties but importantly for this, a program can carry a copy of itself around and reproduce it on command. Hold that thought.
+
+**Step two: teach the compiler a backdoor.** Say you want your compiler to miscompile one specific program. The C compiler has a function that compiles a line of source, roughly:
+
+```
+compile(line) {
+  ...
+}
+```
+
+You add a check to it:
+
+```
+compile(line) {
+  if (matches(line, "the login program")) {
+    emit("login, but also accept the password 'backd00r1!'");
+    return;
+  }
+  ...
+}
+```
+
+Now whenever this compiler builds the `login` program, the binary it produces has a second, secret password baked in. The source of `login` is clean. Anyone can read it. The backdoor lives only in the compiler, and only appears in the binary the compiler emits.
+
+This is already bad, but it's detectable. The extra `if` is sitting right there in the compiler's own source. Anyone reading the compiler would find it.
+
+**Step three: hide the backdoor from the compiler's source too.** This is the beautiful but nasty bit. You add a *second* check:
+
+```
+compile(line) {
+  if (matches(line, "the login program")) {
+    emit("login, plus the 'backd00r1' backdoor");
+    return;
+  }
+  if (matches(line, "the compiler itself")) {
+    emit("the compiler, plus BOTH of these if-statements");
+    return;
+  }
+  ...
+}
+```
+
+The second check fires when the compiler is compiling *itself*. When it does, it re-inserts both backdoors into the new compiler binary. This is where the quine from step one becomes important: the compiler carries a copy of the malicious code and injects it into its own offspring.
+
+Now do the following. Compile this poisoned source once to get a poisoned compiler binary. Then **delete the two `if`-statements from the source code.** Recompile the compiler using the poisoned binary. The new compiler comes out poisoned anyway, because the running binary put the backdoors back. From this point on:
+
+- The compiler source is clean. You can read every line. There is nothing there.
+- The `login` source is clean.
+- Every `login` binary has a backdoor.
+- Every compiler binary you build has the same self-propagating trap.
+
+The bug lives only in the binary. You could audit every line of source on the machine and find nothing.
+
+## Reading source code won't save you
+
+Even worse, the compiler is only the example. Thompson's point is that this extends down through every layer of abstraction we use.
+
+You trust your program because you read the source. But you didn't run the source, you ran the binary the compiler produced. So really you trust the compiler. The compiler is itself a binary, produced by an earlier compiler. So you trust that one. Keep going down: the compiler, the assembler, the linker, the operating system that loads it, the CPU microcode that executes it, the silicon underneath. Thompson drops this cheerful bomb on us:
+
+> I could have picked on any program-handling program such as an assembler, a loader, or even hardware microcode. As the level of program gets lower, these bugs will be harder and harder to detect. A well-installed microcode bug will be almost impossible to detect. A well-installed microcode bug will be almost impossible to detect.
+
+Every layer is vouched for by the layer beneath it, and the bottom layer vouches for itself. Reading the source checks the very top and nothing underneath it.
+
+This can feel a little academic, however, it is a very real attack vector. The [xz-utils backdoor](https://research.swtch.com/xz-timeline) in 2024 was a multi-year effort to slip a backdoor into a compression library that ships with nearly every Linux box, where the payload hid in build artifacts (like binaries) rather than the source you can read on GitHub. The git history looked fine but the thing that got built and shipped was not. The reality is that most of us now run code we could never read, built by machines we don't control.
+
+So, it is all doom-and-gloom? Is there a solution? Short answser is, kind of.
+
+## Some pragmatic defenses
+
+No single trick makes the problem disappear but I particularly like 3 relatively straightforward steps that go a long way.
+
+**Reproducible builds.** Most software reaches you as a binary someone else compiled, and you take on faith that it came from the source you can read. A [reproducible build](https://reproducible-builds.org/) is one where the same source always produces the same bytes, on anyone's machine. So now you can independently-verify by rebuilding from source yourself and confirm you get the identical binary. Alone this doesn't beat Thompson's attack above (without reading the next line, think about why...), because a poisoned compiler is deterministic too and emits the same poisoned bytes every time. But it's a great start as now the step from source to binary is not something you trust just one builder about and becomes something many independent people can verify.
+
+**Diverse double-compiling.** This is the real answer to Thompson's compiler trojan, worked out by [David A. Wheeler](https://dwheeler.com/trusting-trust/). The trick is that you never try to read the suspect compiler binary. Instead you compile the compiler's own source with a second, completely unrelated compiler, then use that result to build the compiler again, and check the final binary matches the official one. If they match, a Thompson-style backdoor would have to be present in both compilers, identically and independently. Two unrelated toolchains carrying the exact same trojan by coincidence does not happen. So you catch the backdoor without inspecting a single byte of the suspect binary, purely by making two independent compilers agree. Wheeler carried this out for real, not just on paper.
+
+**Bootstrappable builds.** The regress still has a floor. Every compiler was built by an earlier binary compiler, back to some seed binary nobody ever audited. [Bootstrappable builds](https://bootstrappable.org/) shrink that seed until a person can read it. GNU Guix's [full-source bootstrap](https://guix.gnu.org/en/blog/2023/the-full-source-bootstrap-building-from-source-all-the-way-down/) starts from a 357-byte program written in hex, small enough to check by hand, and builds the entire toolchain up from source from there. The chunk of unauditable binary you have to take on faith drops from a compiler of unknown origin to a few hundred bytes.
+
+Put the three together and the software stack is covered about as well as it can be: the source is readable, the source-to-binary step is reproducible and checkable by anyone, the compiler is proven honest without trusting its binary, and the seed underneath is small enough to audit by eye.
+
+**All three need diversity.** Diverse double-compiling only works if a second, independent compiler exists to check against. If the whole world builds everything with one compiler lineage, a single poisoning wins everywhere and there is nothing to cross-check. Monoculture is the quiet risk in Thompson's attack, and keeping more than one independent implementation of the important tools alive is part of the defense.
+
+**When the machine itself is the threat.** Everything above assumes you can run the build and the checks on hardware you trust. Sometimes you can't, because the code runs on someone else's server and the operator could swap your binary or read its memory. A trusted execution environment, or enclave, plus remote attestation covers that case: the CPU signs a hash of exactly what it loaded, so a remote user can confirm the running binary is the one they audited and the operator can't tamper with it unseen. Pair it with reproducible builds and you can tie that running binary back to source. It does nothing for Thompson's compiler problem, since a poisoned toolchain produces a binary the enclave will attest just as faithfully, and it moves your root of trust into the CPU vendor's silicon. For the narrow problem of not trusting the machine your code runs on, though, it is the best tool there is.
+
+## Where it bottoms out
+
+You never reach zero trust. Thompson was right about that, and none of these techniques escape it. What the last forty years bought is the ability to make the thing you trust small and inspectable instead of large and invisible: a few hundred bytes of auditable seed, a compiler proven honest without reading it, builds anyone can reproduce, and more than one independent toolchain keeping the others honest.
+
+Thompson said you can't trust code you didn't create yourself. You still can't. But you can now shrink "trust me" down to something a person can actually check, and that is a long way from where the lecture left us.
+
+Read the [original lecture](https://www.cs.cmu.edu/~rdriley/487/papers/Thompson_1984_ReflectionsonTrustingTrust.pdf) if you haven't. [César Soto Valero has a good modern write-up](https://www.cesarsotovalero.net/blog/revisiting-ken-thompson-reflection-on-trusting-trust.html) of the same paper too.
