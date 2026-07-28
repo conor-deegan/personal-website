@@ -85,11 +85,25 @@ So, it is all doom-and-gloom? Is there a solution? Short answser is, kind of.
 
 ## Some pragmatic defenses
 
-No single trick makes the problem disappear but I particularly like 3 relatively straightforward steps that go a long way.
+There is no single thing we can do to mitigate this attack but there are some straightforward things we can do that help a lot:
 
-**Reproducible builds.** Most software reaches you as a binary someone else compiled, and you take on faith that it came from the source you can read. A [reproducible build](https://reproducible-builds.org/) is one where the same source always produces the same bytes, on anyone's machine. So now you can independently-verify by rebuilding from source yourself and confirm you get the identical binary. Alone this doesn't beat Thompson's attack above (without reading the next line, think about why...), because a poisoned compiler is deterministic too and emits the same poisoned bytes every time. But it's a great start as now the step from source to binary is not something you trust just one builder about and becomes something many independent people can verify.
+**Reproducible builds.** Most software reaches you as a binary someone else compiled, and you take it on faith that it came from the source you can read. A [reproducible build](https://reproducible-builds.org/) is one where the same source always produces the same bytes, on anyone's machine. So now you can independently-verify by rebuilding from source yourself and confirm you get the identical binary. Alone it doesn't beat Thompson's attack above (without reading the next line, think about why...), because a poisoned compiler is deterministic too and emits the same poisoned bytes every time, but it sets the stage for the next defence, which relies on the fact that the same source always builds to the same bytes. The step from source to binary is no longer something you trust one builder about and becomes something anyone can verify.
 
-**Diverse double-compiling.** This is the real answer to Thompson's compiler trojan, worked out by [David A. Wheeler](https://dwheeler.com/trusting-trust/). The trick is that you never try to read the suspect compiler binary. Instead you compile the compiler's own source with a second, completely unrelated compiler, then use that result to build the compiler again, and check the final binary matches the official one. If they match, a Thompson-style backdoor would have to be present in both compilers, identically and independently. Two unrelated toolchains carrying the exact same trojan by coincidence does not happen. So you catch the backdoor without inspecting a single byte of the suspect binary, purely by making two independent compilers agree. Wheeler carried this out for real, not just on paper.
+**Diverse double-compiling.** This is the real answer to Thompson's compiler trojan, worked out by [David A. Wheeler](https://dwheeler.com/trusting-trust/). The cool part is you never read the suspect compiler binary at all. Call the compiler you don't trust `A`, its source `sA`, and grab any second, unrelated compiler `B`. Then:
+
+```
+X      = A(sA)        # A compiling its own source (the "official" build)
+stage1 = B(sA)        # rebuild A's source using the unrelated compiler B
+stage2 = stage1(sA)   # use that rebuild to compile A's source once more
+
+compare stage2 against X
+```
+
+If `A` is honest, `stage2` and `X` come out byte-for-byte identical. If `A` hides a Thompson backdoor, they differ, and you can detect this.
+
+The reason this works: if `A` is honest, `A` and `stage1` are the same compiler but built two different ways. Both are just the source `sA` turned into a binary, one by `A` itself and one by `B`. The same program does the same thing, so compiling `sA` with either one produces the same bytes and thus `stage2` and `X` will match.
+
+However, a poisoned `A` breaks this. When `A` compiles, it adds the backdoor back in, something `sA` never asked for. `stage1` doesn't, because `B` builds it honestly from `sA`. So `A` slips the backdoor into `X` while `stage1` leaves `stage2` clean, now the two no longer match which makes the backdoor detectable. One gotcha is if `B` hides the exact same backdoor, i.e. unless someone has deliberately backdoored B to inject the very same trojan. This is theoretically possible but unrealistic. Especially if we add more compilers to our list. (This all rests on the reproducible-builds guarantee above: the same source always builds to the same bytes.)
 
 **Bootstrappable builds.** The regress still has a floor. Every compiler was built by an earlier binary compiler, back to some seed binary nobody ever audited. [Bootstrappable builds](https://bootstrappable.org/) shrink that seed until a person can read it. GNU Guix's [full-source bootstrap](https://guix.gnu.org/en/blog/2023/the-full-source-bootstrap-building-from-source-all-the-way-down/) starts from a 357-byte program written in hex, small enough to check by hand, and builds the entire toolchain up from source from there. The chunk of unauditable binary you have to take on faith drops from a compiler of unknown origin to a few hundred bytes.
 
