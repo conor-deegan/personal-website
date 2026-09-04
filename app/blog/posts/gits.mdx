@@ -6,17 +6,19 @@ summary: 'git hash-object is a hash function and a git tree is a Merkle node. Th
 
 Nobody needed another post-quantum signature scheme, git already is one!
 
-It's called GITS, for **G**itHub **I**s **T**he **S**ignature, and it's [here](https://github.com/conor-deegan/gits). Don't use it for anything.
+Introducing GITS (**G**itHub **I**s **T**he **S**ignature), you can find the source code [here](https://github.com/conor-deegan/gits). Don't use it for anything.
 
-The private key is 32 bytes and a bare git repository, signing is 67 blobs and a commit, verifying is `git hash-object` in a loop until you land back on the public key. Sign twice with the same one-time key and git rejects the second one as a non-fast-forward.
+A quick snapshot: the private key is 32 bytes and a bare git repository, signing is 67 blobs and a commit, verifying is `git hash-object` in a loop until you rederive the public key. If you sign twice with the same one-time key, git rejects the second one as a non-fast-forward.
 
-This is purely for educational purposes to understand how hash-based signature work. I repeat, please do not use it for anything!
+This is purely for educational purposes to understand how hash-based signatures work (and because bastardising git into a hash function is fun).
+
+**I repeat, please do not use it for anything!**
 
 ## Git is a Merkle tree that thinks it is a filesystem
 
-Git doesn't store filenames and versions the way you might expect. It stores objects, and it names each object by hashing it.
+I typically try to think as little as possible about git. It's a tool, I run the commands I remember, I get frustrated with conflicts, and leave the fancy flows to others. The mental model is that git somehow stores my files in versions that makes writing and storing code easier. But importantly, under the hood, git stores objects, and it names each object by hashing it.
 
-A **blob** is a file's contents. Its name is the hash of a tiny header followed by the bytes:
+A **blob** is a file's contents. Its name is the hash of a tiny header followed by the bytes of the file:
 
 ```
 blob_id = H("blob " + length + "\0" + content)
@@ -35,14 +37,14 @@ A **tree** is a directory. Its content is a list of entries, each one a mode, a 
 tree_id = H("tree " + length + "\0" + entries)
 ```
 
-Importantly, a tree's id is a hash of its children's ids. That is the definition of a Merkle node. So a folder is a Merkle tree.
+Importantly, a tree's id is a hash of its children's ids. That is the definition of a Merkle node. So a folder is a Merkle node.
 
-The two important git primitives are:
+The two important git primitives for the rest of this are:
 
-- `git hash-object`. Bytes in, one id out. A hash function.
-- `git mktree`. A list of children in, one id out. A node combiner.
+- `git hash-object`. Bytes in, an id out. A hash function.
+- `git mktree`. A list of children in, an id out. A node combiner.
 
-That is the entire toolbox hash-based signatures need.
+That is the entire set of primitives hash-based signatures need.
 
 One caveat before we go further. A default git repository hashes with SHA-1, and we'll come back to why that matters later. As cryptographers, we prefer SHA256 for our hash-based signatures. Git allows you to select SHA256 as the hash function used via `--object-format=sha256`.
 
@@ -56,37 +58,37 @@ X=$(echo -n "$X"       | git hash-object --stdin)
 X=$(echo -n "$X"       | git hash-object --stdin)
 ```
 
-Every line there creates a real git blob whose content is the previous blob's id. Start from a secret and do it fifteen times. You now have sixteen values: the secret at step 0, and fifteen hashes after it. You publish the last one and keep the rest.
+Every line there creates a git blob whose content is the previous blob's id. Start from a secret and do it fifteen more times. You now have sixteen values: the secret at step 0, and fifteen hashes after it. You publish the last one and keep the rest to yourself.
 
-Now suppose you want to prove you know the number 7. Hand over the value at step 7. Anyone can hash it forward eight more times and check they land on the value you published, so it must have come from your chain. They can't turn it into a proof of 6, because working out step 6 requires inverting the hash function which is known to be hard.
+Now suppose you want to prove you know the number 7. You can hand over the value at step 7. Anyone can hash it forward eight more times and check they land on the value you published, so it must have come from your chain. They can't turn it into a proof of 6, because working out step 6 requires inverting the hash function which is known to be hard.
 
 Thus going forward is simple but going backward is a preimage attack.
 
 ## Signing one message with 67 chains
 
-Make 64 of those chains. Keep the 64 endpoints.
+Proving you know the value at step 7 is impressive and all, but that's not really a signature scheme. Let's sign a full file. To do this, you make 64 of those exact chains above.
 
-To sign a file, hash it with `sha256sum`. You get 64 hex digits, say `f38670c1...`. A hex digit is a number from 0 to 15, and a chain has steps 0 to 15, so the digits and the chains line up exactly. The first digit is `f`, which is 15, so reveal step 15 of the first chain. The second digit is 3, so reveal step 3 of the second chain. Carry on to the end. The signature is those revealed values.
+To sign the file, hash it with `sha256sum`. You get 64 hex digits, say `f38670c1...`. A hex digit is a number from 0 to 15, and a chain has steps 0 to 15, so the digits and the chains line up exactly. The first digit is `f`, which is 15, so reveal step 15 of the first chain. The second digit is 3, so reveal step 3 of the second chain. Keep going until the end and the signature is all of those revealed values.
 
-The verifier hashes the file itself, reads the same digits, and hashes each revealed value forward the remaining number of steps. Digit 3 means twelve steps to go. If all 64 land on the 64 published endpoints, you signed it.
+At verification, the verifier hashes the same file, reads the same digits, and hashes each value you revealed forward the remaining number of steps. Digit 3 means twelve steps to go, digit 10 means 5 steps to go, etc. If all 64 land on your 64 published endpoints, you signed it.
 
-That on its own is forgeable. You revealed step 3 of the second chain and I know your signature. I can hash that value forward twice myself and now I have step 5 of your second chain, which is a perfectly valid reveal for a message whose second digit is 5. So every digit can be pushed up, but still none can be pushed down the chain. So if I can find a message whose hash digits are greater than each of the values you have already revealed, I can easily forge a signature you did not create.
+This on its own is forgeable. In our example above, you revealed step 3 of your second chain. I can hash that value forward twice myself and now I have step 5 of your second chain, which is a perfectly valid reveal for a message whose second digit is 5. So every digit can be pushed up, but still none can be pushed down the chain. So if I can find a message that when hashed, the digits are greater than or equal to each of the values you have already revealed, I can easily forge a signature you did not create.
 
-So three more chains are needed to create a checksum. For each of the 64 message digits, take how far it sits below 15, and add all of that up. The total is between 0 and 960 (64 ⅹ 15), which is three hex digits, and those three digits get signed on the three extra chains exactly like the others.
+So three more chains are needed to create a checksum. For each of the 64 message digits, take how far it sits below 15, and add all of that up. The total is between 0 and 960 (64 × 15), which is three hex digits, and those three digits get signed on the three extra chains exactly like the others.
 
-Now push a message digit up and the checksum drops. A lower checksum digit means a step *earlier* on its own chain, which is the same preimage attack from earlier. Whatever a forger pushes up, the checksum comes down and thus can't be forged.
+Now push a message digit up and the checksum drops. A lower checksum digit means a step *earlier* on its own chain, which is the same preimage attack from earlier. Whatever a forger pushes up on the message side, the checksum comes down and thus can't be forged.
 
-That is 67 chains, and 67 revealed values per signature. The 67 endpoints get handed to `git mktree`, named `00` to `66`, and the id that comes out is the one-time public key.
+That is 67 chains, and 67 revealed values per signature. The 67 endpoints get passed into `git mktree`, named `00` to `66`, and the id that comes out is the one-time public key (we just make a tree out of our 67 endpoints to get one single root).
 
-This is a Winternitz one-time signature, WOTS+ with `w=16`, from [Hülsing in 2013](https://eprint.iacr.org/2017/965.pdf). I didn't invent it, I just gave it a home as a git repository.
+This is a Winternitz one-time signature, WOTS+ with `w=16`, from [Hülsing in 2013](https://eprint.iacr.org/2017/965.pdf). I didn't invent it, I just gave it a nice home as a git repository.
 
-## Signing more than once (this is XMSS)
+## Signing more than once
 
-A one-time key signs one message. If you sign a second message under the same 67 chains and you reveal both signatures, I as an attacker can take the lower values from each to give myself a higher chance of being able to find a message digest I can forge a signature for.
+A one-time key can only sign one message. If you sign a second message under the same 67 chains and you reveal both signatures, I, as an attacker, can take the lower values from each signature to give myself a higher chance of being able to find a message digest I can forge a signature for.
 
-So now we have an issue, our public key which we posted on our blog is only good for one signature and then we must rotate it. This isn't very helpful for a signature scheme so we gix this by creating more single use keys and hashing them together into a Merkle tree.
+So now we have an issue, your public key which you posted on your blog is only good for one signature and then we must rotate it. This isn't very helpful for a signature scheme. We fix this by creating more single use keys and hashing them together into a Merkle tree.
 
-We can make 1024 one-time keys where each one is a git tree of 67 endpoints, so each one has an id. Pair them up and put each pair into a parent tree with two entries named `0` and `1`. Pair those. Keep going until there is one tree left at the top. Its id is your public key.
+We can make 1024 one-time keys where each one is a git tree of 67 endpoints, so each one has an id. Pair them up and put each pair into a parent tree with two entries named `0` and `1`. Pair those. Keep going up the tree until there is one root at the top. Its id is your, now longer lived, public key.
 
 ```bash
 gits keygen --key conor.gitskey --height 10
@@ -99,9 +101,9 @@ gits keygen --key conor.gitskey --height 10
 #   gits1-h10-c54319d9c3ba396ebc8bf3d0018d319e9ba9e250d6437803ca47025043d5b729
 ```
 
-That string is a git tree object id which we can use as our longer lived public key. You can now pin that in your bio and it is good for 1024 signatures before you need to rotate it.
+That string at the end of the output, `gits1-h10-c5431` is what a GITS public key looks like. You can now pin that in your bio and it is good for 1024 signatures before you need to rotate it.
 
-A signature now has to say two things: which one-time key it used, and where that one-time key sits in our tree. The first is just a number and the second is called the **authentication path**: the id of the sibling tree at every level on the way up, ten of them for a tree of height 10.
+A signature now has to contain two things: which one-time key it used, and where that one-time key sits in your tree. The first is just a number we tracked called **state** and the second is called the **authentication path**: the id of the sibling tree at every level on the way up, ten of them for a tree of height 10.
 
 Verification is then a fixed procedure:
 
@@ -121,7 +123,7 @@ step 0 of (leaf, chain) = SHA256("GITS1-secret\0" || seed || leaf || chain)
 
 So a key directory is a 32-byte `seed`, a single line `gits.pub` public key, and a bare repository holding 2047 tree objects. Every one of those trees is derived from the seed, so you can delete them and rebuild any time you want. Eight megabytes of key material for a thousand signatures 🫠.
 
-## The verifier is a simple shell script
+## The verifier
 
 You don't need gits to verify a signature, you can do it once you have git installed on your machine. I just made a simple script so you don't have to:
 
@@ -141,13 +143,13 @@ You don't need gits to verify a signature, you can do it once you have git insta
 #  ✓ VERIFIED
 ```
 
-That is about a hundred lines of bash. It runs `sha256sum` once on the message, and after that every hash it computes is computed by `git hash-object` or `git mktree` in a throwaway repository it created in `/tmp`. Change one character in `report.txt` and the digits change, the endpoints change, the one-time key changes, the root changes, and the signature will be REJECTED.
+That is about a hundred lines of bash. It runs `sha256sum` once on the message, and after that every hash it computes is computed by `git hash-object` or `git mktree` in a throwaway repository it created in `/tmp`. If you change one character in `report.txt` and the digits change, the endpoints change, the one-time key changes, the root changes, and the signature will be `REJECTED`.
 
-The signature itself is a text file: 67 lines of revealed values and 10 lines of sibling ids. 6,100 bytes to sign an 18-byte file (althoug the file can be any size).
+The signature itself is a text file: 67 lines of revealed values and 10 lines of sibling ids. 6,100 bytes to sign an 18-byte file (although the file can be any size).
 
-## The state problem
+## Tracking state 
 
-Every stateful hash-based scheme has one genuinely dangerous failure mode: use a leaf index twice and you have potentially given enough informration for a signaure to be forged. The usual mitigation is a counter in some file and some optimism.
+Every stateful hash-based scheme has one dangerous failure mode: use a leaf index twice and you have potentially given enough information for a signature to be forged. The usual mitigation is a counter in some file and some optimism.
 
 In GITS the counter is the commit history of the key repository. One commit per signature:
 
@@ -158,9 +160,9 @@ git --git-dir=conor.gitskey/state.git log --oneline refs/gits/state
 # 84e4984 gits: consumed leaf 0 for digest f38670c19b71f823...
 ```
 
-The next free leaf is `git rev-list --count refs/gits/state`. Claiming it is `git update-ref refs/gits/state <new> <old>`, which is just a compare-and-swap against the ref's previous value. Two processes on one machine will conflict and won't allow reuse.
+The next free leaf is `git rev-list --count refs/gits/state`. Claiming it is done by `git update-ref refs/gits/state <new> <old>`, which is just a compare-and-swap against the ref's previous value. This means that two processes on one machine will conflict and won't allow reuse.
 
-Two machines is the more realistic accident. You copied the key directory to a laptop and forgot. Both sign at leaf 3, both succeed locally, and then the histories meet:
+Two machines is the more realistic issue. You copied the key directory to a laptop and forgot. Both sign at leaf 3, both succeed locally, and then the histories meet at some point:
 
 ```bash
 git push machine1 refs/gits/state:refs/gits/state
@@ -169,13 +171,13 @@ git push machine1 refs/gits/state:refs/gits/state
 # not have locally.
 ```
 
-Index reuse in a hash-based signature scheme is normally silent, and then catastrophic. Here it is one of the most familiar error message in software. This is entirely ridiculous and unsafe but figuring that out is left as an exercise for the reader.
+Index reuse in a hash-based signature scheme is normally silent, and then catastrophic. Here it is one of the most familiar error messages in software. This is entirely ridiculous and still unsafe but figuring that out is left as an exercise for the reader.
 
-If you delete `state.git`, the Merkle tree rebuilds from the seed without complaint and your state is lost. This is bad. Again, don't use this!
+If you delete `state.git`, the Merkle tree rebuilds from the seed without any complaint and your state is lost. This is bad. Again, don't use this!
 
 ## m-of-n
 
-Three people hold keys and you want two of them have to agree to produce a valid signature.
+What if you want it such that three people hold keys and you want two of them have to agree to produce a valid signature.
 
 This is solved in GITS via the concept of a group; one git tree sitting above three keys.
 
@@ -187,15 +189,15 @@ git --git-dir=group.gits.git ls-tree 78d5e0a6df38a61df2bca897b8c324c28a3ae757e72
 # 040000 tree c4cd9f4d...    dave-h6
 ```
 
-The `.policy` blob contains the threshold (2-of-3 for example). Each member entry is that member's own published root tree (their public key), and the entry name carries their tree height (h6 in this case). The group key is that tree's id:
+The `.policy` blob contains the threshold (2-of-3 for example). Each member entry is that member's own published root tree (their public key), and the entry name also contains their tree height (h6 in this case). The group key (the "public key" for the group) is that tree's id:
 
 ```
 gits1-g2of3-78d5e0a6df38a61df2bca897b8c324c28a3ae757e72ba2afdc7ab8c69a0fff3c
 ```
 
-Three things are coded inside this single hash: the threshold, the membership, and every member's depth. If you change any of them it becomes a different group key, and every approval made under the old one stops verifying. There is no admin who can lower the threshold, because there is no admin.
+Three things are coded inside this single hash: the threshold, the membership, and every member's depth. If you change any of them it becomes a different group key, and every approval made under the old one will no longer verify correctly. There is no admin who can lower the threshold, because there is no admin.
 
-The height in the entry name is an important addition. A verifier that doesn't know how deep a member's tree is will happily accept an authentication path of any length, which would let a member present an internal node of their own tree as their root, and sign under a subtree the group never agreed to. Putting the height in the group public key (hash) closes off that security concern.
+The height in the entry name is an important addition. A verifier that doesn't know how deep a member's tree is will happily accept an authentication path of any length, which would let a member present an internal node of their own tree as their root, and sign under a subtree the group never agreed to. Putting the height in the group public key closes off that security concern.
 
 What members actually sign is a second tree, built over the group and the message (too many trees 🌳):
 
@@ -221,7 +223,7 @@ gits group bundle --group group.gits alice.approval bob.approval
 # bundle.gits, 11552 bytes
 ```
 
-The bundle isn't authenticated and doesn't need to be. The verifier rebuilds the group tree out of it and throws the whole thing away unless the id matches the group key it was handed separately.
+The bundle isn't authenticated but also doesn't need to be. The verifier rebuilds the group tree out of it and throws the whole thing away unless the id matches the group key it was handed separately.
 
 ```bash
 ./verify-group.sh release.txt bundle.gits "$(cat group.gits.pub)"
@@ -239,7 +241,7 @@ The bundle isn't authenticated and doesn't need to be. The verifier rebuilds the
 #  ✓ VERIFIED — 2 of 3 approved
 ```
 
-This verifier doesn't even use `sha256sum`. The message becomes a blob id via `git hash-object`, the group and proposal trees come from `git mktree`, and the chain digits are read off the proposal tree id. Every hash in it is git's.
+This verifier doesn't even use `sha256sum`. The message becomes a blob id via `git hash-object`, the group and proposal trees come from `git mktree`, and the chain digits are read off the proposal tree id. Every hash in it is git only.
 
 Both obvious attacks fail. Paste Alice's approval in twice and the verifier counts distinct signers:
 
@@ -256,13 +258,13 @@ Edit the threshold in the bundle down to 1 and you have not lowered anything, yo
 #  ✗ the bundle describes a different group than the key given
 ```
 
-There is no new cryptography. It is n independent XMSS verifications and a Merkle membership check.
+There is no new cryptography. It is `n` independent XMSS verifications and a Merkle membership check.
 
 ## The security of this absurd scheme
 
 **The chains need preimage resistance.** You hold my signature which reveals say step 3 in a hash chain. You want to forge a signature but need step 2 say. Well step 2 is some bytes that hash to step 3. The only way to find them is to guess bytes, hash them, and see. About 2^256 attempts with SHA-256. This is a preimage attack.
 
-There is a cheaper version of that if you're not fussy about whose key you break. A thousand published keys is on the order of 70 million endpoints sitting in public. Guess once, hash once, and check the result against all 70 million at the same time, so every guess has 70 million chances instead of one. That is where the `GITS1 <leaf> <chain> <step>` header on every blob comes in. The verifier checks that the header says exactly where the blob was used, so a lucky guess is only good for the single position it names. This is called domain separation and it takes the multi-target discount away.
+There is a cheaper version of that if you're not fussy about whose key you break. A thousand published keys is on the order of 70 million endpoints. Guess once, hash once, and check the result against all 70 million at the same time, so every guess has 70 million chances instead of one. That is where the `GITS1 <leaf> <chain> <step>` header on every blob comes in. The verifier checks that the header says exactly where the blob was used, so a lucky guess is only good for the single position it names. This is called domain separation and it takes the multi-target discount away.
 
 **The tree needs second-preimage resistance.** Hand the verifier 67 blobs you made up and they will `mktree` into some id. For the climb to end at my public key, that id has to be one of my leaf ids exactly. Fixed target, find a second thing that hashes to it. This attack has the same cost as above.
 
@@ -270,7 +272,7 @@ There is a cheaper version of that if you're not fussy about whose key you break
 
 Which brings us back to SHA-1. A default git repository hashes with SHA-1, SHA-1 collisions have been public [since 2017](https://security.googleblog.com/2017/02/announcing-first-sha1-collision.html), and today one costs a few tens of thousands of dollars in GPU time. This is called a repudiation attack. GITS creates every repository with `--object-format=sha256`, and `gits selftest` checks our object ids against real `git hash-object` and `git mktree` so there is no question of the two disagreeing.
 
-On calling it post-quantum. Grover's algorithm halves the exponent on a preimage search, and nothing better is known against a hash function, which is [why hash-based signatures survive](/blog/post-quantum-signatures-part-1). SHA-256 goes from 2^256 guesses to about 2^128 quantum operations, which is beyond plenty of security. SHA-1 would go to 2^80, which is possibly not (although this is debateable). Interestingly, a default git repo is not post-quantum, and it wasn't quite pre-quantum either.
+On calling it post-quantum. Grover's algorithm halves the exponent on a preimage search, and nothing better is known against a hash function, which is [why hash-based signatures survive](/blog/post-quantum-signatures-part-1). SHA-256 goes from 2^256 guesses to about 2^128 quantum operations, which is beyond plenty of security. SHA-1 would go to 2^80, which is possibly not (although this is debatable). Interestingly, a default git repo is not post-quantum, and it wasn't quite pre-quantum either (take this with a pinch of salt, what are the real attack vectors here?).
 
 ## A happenstance 
 
@@ -290,7 +292,7 @@ git --git-dir=conor.gitskey/state.git fsck $(sed 's/.*-//' conor.gitskey/gits.pu
 
 None of the cryptography here is mine. Lamport one-time signatures are from 1979. I built those from scratch in [part 2](/blog/post-quantum-signatures-part-2) of this series and broke them in [part 3](/blog/post-quantum-signatures-part-3). WOTS+ is Hülsing in 2013, and XMSS has been a standard for years. The arguments in the section above are theirs, not mine, so don't give out to me.
 
-The only thing GITS contributes is noticing that git already had the exact ingredients to be a hash-based signature scheme. Content-addressed objects, named by hashing their contents, where a directory's name is a hash of its children's names which is a Merkle tree with a CLI bolted on. Hash-based signatures are a Merkle tree over a pile of one-time keys.
+The only thing GITS contributes is noticing that git already had the exact ingredients to be a hash-based signature scheme. Content-addressed objects, named by hashing their contents, where a directory's name is a hash of its children's names which is a Merkle tree with an unnecessary CLI bolted on. Hash-based signatures are a Merkle tree over a pile of one-time keys.
 
 This is absurd, completely impractical, you shouldn't use it for anything. But it does verify.
 
