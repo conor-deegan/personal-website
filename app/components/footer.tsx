@@ -17,7 +17,7 @@ function ArrowIcon() {
 }
 
 const socialLinks = [
-    { href: 'https://x.com/conordeegan4', label: 'X' },
+    { href: 'https://x.com/conordeegan', label: 'X' },
     { href: 'https://github.com/conor-deegan', label: 'GitHub' },
     { href: '/rss', label: 'RSS' },
 ];
