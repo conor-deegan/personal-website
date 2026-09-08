@@ -2,12 +2,11 @@
     "name": "personal-website",
     "version": "0.1.0",
     "private": true,
+    "packageManager": "pnpm@10.34.5",
     "scripts": {
         "dev": "next dev",
         "build": "next build",
         "start": "next start",
-        "l:c": "next lint",
-        "l:f": "next lint --fix",
         "p:c": "prettier --check .",
         "p:f": "prettier --write ."
     },

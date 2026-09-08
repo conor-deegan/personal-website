@@ -4,5 +4,5 @@ out
 public
 *.md
 *.mdx
-package-lock.json
+pnpm-lock.yaml
 

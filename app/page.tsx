@@ -11,10 +11,11 @@ export default function Page() {
                     Conor Deegan
                 </h1>
                 <p>
-                    I&apos;m a computer scientist and software engineer. I work on post-quantum cryptography.
+                    I&apos;m a computer scientist and software engineer. I work on post-quantum
+                    cryptography.
                 </p>
                 <p>
-                    I&apos;m  the co-founder and CTO of{' '}
+                    I&apos;m the co-founder and CTO of{' '}
                     <a
                         href="https://www.projecteleven.com"
                         target="_blank"
@@ -43,39 +44,78 @@ export default function Page() {
 
             <section className="mb-12">
                 <h2 className="text-xl font-semibold mb-6 tracking-tight">Projects/Research</h2>
-                <Link href={'https://eprint.iacr.org/2026/380'} target='_blank' rel='noopener noreferrer' className="group">
+                <Link
+                    href={'https://eprint.iacr.org/2026/380'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                >
                     <article className="mb-4">
                         <h3 className="group-hover:text-[hsl(var(--accent))] transition-colors">
                             Lattice HD Wallets
                         </h3>
-                        <p>Post-quantum BIP32 Hierarchical Deterministic Wallets from Lattice Assumptions</p>
+                        <p>
+                            Post-quantum BIP32 Hierarchical Deterministic Wallets from Lattice
+                            Assumptions
+                        </p>
                     </article>
                 </Link>
-                <Link href={'https://github.com/conor-deegan/THINCS/'} target='_blank' rel='noopener noreferrer' className="group">
+                <Link
+                    href={'https://github.com/conor-deegan/THINCS/'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                >
                     <article className="mb-4">
                         <h3 className="group-hover:text-[hsl(var(--accent))] transition-colors">
                             THINCS
                         </h3>
-                        <p>A research CLI that searches the stateless hash-based signature parameter space under a signing-budget constraint and can instantiate a working signature scheme with the result.</p>
+                        <p>
+                            A research CLI that searches the stateless hash-based signature
+                            parameter space under a signing-budget constraint and can instantiate a
+                            working signature scheme with the result.
+                        </p>
                     </article>
                 </Link>
-                <Link href={'https://github.com/PQC-Suite-B/'} target='_blank' rel='noopener noreferrer' className="group">
+                <Link
+                    href={'https://github.com/PQC-Suite-B/'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                >
                     <article className="mb-4">
                         <h3 className="group-hover:text-[hsl(var(--accent))] transition-colors">
                             PQC Suite B
                         </h3>
-                        <p>Performance optimizations for post-quantum signature schemes with the BLAKE3 hash function</p>
+                        <p>
+                            Performance optimizations for post-quantum signature schemes with the
+                            BLAKE3 hash function
+                        </p>
                     </article>
                 </Link>
-                <Link href={'https://registry.projecteleven.com'} target='_blank' rel='noopener noreferrer' className="group">
+                <Link
+                    href={'https://registry.projecteleven.com'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                >
                     <article className="mb-4">
                         <h3 className="group-hover:text-[hsl(var(--accent))] transition-colors">
                             Post-quantum algorithm registry
                         </h3>
-                        <p>I maintain a curated, open-source registry of post-quantum cryptographic algorithms, providing clear, structured data and comparisons for researchers and engineers.</p>
+                        <p>
+                            I maintain a curated, open-source registry of post-quantum cryptographic
+                            algorithms, providing clear, structured data and comparisons for
+                            researchers and engineers.
+                        </p>
                     </article>
                 </Link>
-                <Link href={'https://github.com/conor-deegan/benching-pq/'} target='_blank' rel='noopener noreferrer' className="group">
+                <Link
+                    href={'https://github.com/conor-deegan/benching-pq/'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                >
                     <article className="mb-4">
                         <h3 className="group-hover:text-[hsl(var(--accent))] transition-colors">
                             Benchmarking post-quantum signatures
@@ -88,6 +128,6 @@ export default function Page() {
             <section>
                 <Subscribe />
             </section>
-        </section >
+        </section>
     );
 }
