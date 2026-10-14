@@ -45,6 +45,21 @@ export default function Page() {
             <section className="mb-12">
                 <h2 className="text-xl font-semibold mb-6 tracking-tight">Projects/Research</h2>
                 <Link
+                    href={'https://eprint.iacr.org/2026/2455'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="group"
+                >
+                    <article className="mb-4">
+                        <h3 className="group-hover:text-[hsl(var(--accent))] transition-colors">
+                           CUTS: Chained Uniform-sum Tree Signatures
+                        </h3>
+                        <p>
+                          A few-time hash-based signature scheme with compact signatures and proven bounds on security after key reuse.
+                        </p>
+                    </article>
+                </Link>
+                <Link
                     href={'https://eprint.iacr.org/2026/380'}
                     target="_blank"
                     rel="noopener noreferrer"
