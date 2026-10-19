@@ -1,3 +1,5 @@
+import ThemeSwitcher from './theme-switcher';
+
 function ArrowIcon() {
     return (
         <svg
@@ -46,9 +48,10 @@ export default function Footer() {
                     9EC530B5788C0870
                 </a>
             </p>
-            <p className="mt-6 text-subtle text-sm font-sans">
-                © {new Date().getFullYear()} Conor Deegan
-            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-between gap-x-6 gap-y-3 text-sm font-sans">
+                <p className="text-subtle">© {new Date().getFullYear()} Conor Deegan</p>
+                <ThemeSwitcher />
+            </div>
         </footer>
     );
 }

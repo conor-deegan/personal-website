@@ -71,7 +71,7 @@ export default async function Blog(props: { params: Promise<{ slug: string }> })
             />
 
             <header className="mb-10">
-                <h1 className="text-3xl font-semibold tracking-tight leading-tight mb-4">
+                <h1 className="text-[1.6rem] md:text-3xl font-semibold tracking-tight leading-tight text-balance mb-4">
                     {post.metadata.title}
                 </h1>
                 <div className="flex items-center gap-3 text-muted text-sm font-sans">

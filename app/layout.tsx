@@ -2,7 +2,8 @@ import './globals.css';
 import { Analytics } from '@vercel/analytics/react';
 import { baseUrl } from './sitemap';
 import Footer from './components/footer';
-import { Crimson_Pro, JetBrains_Mono } from 'next/font/google';
+import { themeInitScript } from './components/theme-switcher';
+import { Literata, JetBrains_Mono } from 'next/font/google';
 import type { Metadata } from 'next';
 // import { Navbar } from './components/nav';
 import { SpeedInsights } from '@vercel/speed-insights/next';
@@ -35,10 +36,11 @@ export const metadata: Metadata = {
     },
 };
 
-const crimsonPro = Crimson_Pro({
+const literata = Literata({
     variable: '--font-serif',
     subsets: ['latin'],
     display: 'swap',
+    preload: true,
 });
 
 const jetbrainsMono = JetBrains_Mono({
@@ -49,11 +51,17 @@ const jetbrainsMono = JetBrains_Mono({
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
     return (
-        <html lang="en" className={`${crimsonPro.variable} ${jetbrainsMono.variable}`}>
+        <html
+            lang="en"
+            className={`${literata.variable} ${jetbrainsMono.variable}`}
+            // The init script sets data-theme before React hydrates
+            suppressHydrationWarning
+        >
             <head>
+                <script dangerouslySetInnerHTML={{ __html: themeInitScript }} />
                 <link rel="icon" href="/favicon.ico" sizes="any" />
             </head>
-            <body className="antialiased max-w-2xl mx-auto px-6 md:px-8 mt-12 lg:mt-16">
+            <body className="antialiased max-w-2xl mx-auto px-[18px] md:px-8 mt-12 lg:mt-16">
                 <main className="flex-auto min-w-0 flex flex-col">
                     {/* <Navbar /> */}
                     {children}
