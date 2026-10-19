@@ -2,37 +2,74 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-    --font-serif: 'Crimson Pro', Georgia, 'Times New Roman', serif;
+/* Light mode - warm cream background, near-black text */
+:root,
+:root[data-theme='light'] {
+    --font-serif: 'Literata', Georgia, 'Times New Roman', serif;
     --font-mono: 'JetBrains Mono', 'Fira Code', Consolas, monospace;
 
-    /* Light mode - warm cream tones for comfortable reading */
     --background: 48 33% 97%;
-    --foreground: 30 10% 18%;
-    --foreground-muted: 30 6% 45%;
-    --foreground-subtle: 30 4% 55%;
-    --accent: 220 70% 45%;
-    --accent-hover: 220 75% 35%;
-    --code-background: 40 20% 94%;
-    --code-foreground: 30 10% 25%;
+    --foreground: 0 0% 10%;
+    --foreground-strong: 0 0% 4%;
+    --foreground-muted: 30 6% 40%;
+    --foreground-subtle: 30 4% 50%;
+    --accent: 220 70% 40%;
+    --accent-hover: 220 75% 30%;
+    --code-background: 40 20% 93%;
+    --code-foreground: 30 10% 18%;
+    --code-border: 35 15% 85%;
     --border: 30 15% 88%;
     --selection: 45 60% 88%;
+    --body-weight: 400;
+    --bold-weight: 650;
+
+    color-scheme: light dark;
+}
+
+/* Dark mode - off-black background, off-white text */
+/* Match browser UI (scrollbars, form controls) to an explicitly chosen theme */
+:root[data-theme='light'] {
+    color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+    color-scheme: dark;
 }
 
 @media (prefers-color-scheme: dark) {
-    :root {
-        /* Dark mode - warm charcoal with soft ivory text */
-        --background: 30 12% 7%;
-        --foreground: 38 20% 85%;
-        --foreground-muted: 30 10% 55%;
-        --foreground-subtle: 30 8% 45%;
-        --accent: 205 65% 65%;
-        --accent-hover: 205 70% 75%;
-        --code-background: 30 12% 11%;
-        --code-foreground: 38 15% 75%;
-        --border: 30 10% 18%;
-        --selection: 30 25% 20%;
+    :root:not([data-theme='light']) {
+        --background: 30 5% 7.5%;
+        --foreground: 40 18% 87%;
+        --foreground-strong: 40 18% 90%;
+        --foreground-muted: 35 8% 62%;
+        --foreground-subtle: 30 6% 50%;
+        --accent: 210 65% 73%;
+        --accent-hover: 210 70% 82%;
+        --code-background: 36 8% 12.5%;
+        --code-foreground: 40 15% 82%;
+        --code-border: 33 9% 20%;
+        --border: 30 8% 20%;
+        --selection: 30 25% 22%;
+        --body-weight: 420;
+        --bold-weight: 600;
     }
+}
+
+:root[data-theme='dark'] {
+    --background: 30 5% 7.5%;
+    --foreground: 40 18% 87%;
+    --foreground-strong: 40 18% 90%;
+    --foreground-muted: 35 8% 62%;
+    --foreground-subtle: 30 6% 50%;
+    --accent: 210 65% 73%;
+    --accent-hover: 210 70% 82%;
+    --code-background: 36 8% 12.5%;
+    --code-foreground: 40 15% 82%;
+    --code-border: 33 9% 20%;
+    --border: 30 8% 20%;
+    --selection: 30 25% 22%;
+    --body-weight: 420;
+    --bold-weight: 600;
 }
 
 @layer base {
@@ -45,15 +82,14 @@
         -webkit-font-smoothing: antialiased;
         -moz-osx-font-smoothing: grayscale;
         text-rendering: optimizeLegibility;
-        color-scheme: light dark;
     }
 
     body {
         font-family: var(--font-serif);
         background-color: hsl(var(--background));
         color: hsl(var(--foreground));
-        line-height: 1.75;
-        letter-spacing: 0.01em;
+        font-weight: var(--body-weight);
+        line-height: 1.6;
         transition:
             background-color 0.2s ease,
             color 0.2s ease;
@@ -70,13 +106,19 @@
     h5,
     h6 {
         font-weight: 600;
-        line-height: 1.3;
-        letter-spacing: -0.02em;
+        line-height: 1.2;
+        letter-spacing: -0.015em;
     }
 
     code {
         font-family: var(--font-mono);
-        font-size: 0.85em;
+        font-size: 0.9em;
+    }
+
+    b,
+    strong {
+        font-weight: var(--bold-weight);
+        color: hsl(var(--foreground-strong));
     }
 
     pre {
@@ -96,6 +138,22 @@
         text-decoration: none;
     }
 
+    .theme-option {
+        color: hsl(var(--foreground-subtle));
+        transition: color 0.15s ease;
+    }
+
+    .theme-option:hover,
+    .theme-option.is-active {
+        color: hsl(var(--foreground));
+    }
+
+    .theme-option.is-active {
+        text-decoration: underline;
+        text-underline-offset: 4px;
+        text-decoration-thickness: 1px;
+    }
+
     .content-link {
         color: hsl(var(--accent));
         text-decoration: none;
@@ -109,44 +167,53 @@
         text-decoration-thickness: 1px;
     }
 
+    /* 17px on mobile, 18px on desktop; 34em caps lines at ~65-70 characters */
     .prose {
-        max-width: 65ch;
-        font-size: 1rem;
-        line-height: 1.8;
+        max-width: 34em;
+        font-size: 17px;
+        line-height: 1.62;
+    }
+
+    @media (min-width: 768px) {
+        .prose {
+            font-size: 18px;
+        }
     }
 
     .prose p {
-        margin-bottom: 1.5em;
+        margin-bottom: 1em;
     }
 
-    .prose h2 {
-        font-size: 1.5rem;
-        margin-top: 2.5em;
-        margin-bottom: 0.75em;
-    }
-
-    .prose h3 {
-        font-size: 1.25rem;
-        margin-top: 2em;
+    .prose h2,
+    .prose h3,
+    .prose h4 {
+        line-height: 1.22;
+        margin-top: 1.8em;
         margin-bottom: 0.6em;
     }
 
+    .prose h2 {
+        font-size: 1.4em;
+    }
+
+    .prose h3 {
+        font-size: 1.2em;
+    }
+
     .prose h4 {
-        font-size: 1.1rem;
-        margin-top: 1.75em;
-        margin-bottom: 0.5em;
+        font-size: 1.05em;
     }
 
     .prose ul {
         margin-top: 0.5em;
-        margin-bottom: 1.5em;
+        margin-bottom: 1em;
         padding-left: 1.5em;
         list-style-type: disc;
     }
 
     .prose ol {
         margin-top: 0.5em;
-        margin-bottom: 1.5em;
+        margin-bottom: 1em;
         padding-left: 1.5em;
         list-style-type: decimal;
     }
@@ -171,34 +238,45 @@
 
     .prose a {
         color: hsl(var(--accent));
-        text-decoration: none;
+        text-decoration: underline;
+        text-underline-offset: 3px;
+        text-decoration-thickness: 1px;
         transition: color 0.15s ease;
     }
 
     .prose a:hover {
         color: hsl(var(--accent-hover));
-        text-decoration: underline;
-        text-underline-offset: 3px;
-        text-decoration-thickness: 1px;
     }
 
     .prose code:not(pre code) {
         background-color: hsl(var(--code-background));
         color: hsl(var(--code-foreground));
-        padding: 0.2em 0.4em;
+        padding: 0.1em 0.25em;
         border-radius: 4px;
         font-size: 0.85em;
+        /* Keep padding and rounded corners on each fragment when a span wraps */
+        -webkit-box-decoration-break: clone;
+        box-decoration-break: clone;
     }
 
     .prose pre {
         background-color: hsl(var(--code-background));
         color: hsl(var(--code-foreground));
-        padding: 1.25em 1.5em;
+        padding: 1em 1.25em;
+        border: 1px solid hsl(var(--code-border));
         border-radius: 8px;
+        /* Never wrap code: wrapped lines read as new lines and break indentation. Scroll instead. */
+        white-space: pre;
         overflow-x: auto;
+        tab-size: 4;
         margin: 1.5em 0;
-        font-size: 0.8rem;
+        /* 14.4px on desktop, 13.6px on mobile */
+        font-size: 0.8em;
         line-height: 1.6;
+    }
+
+    .prose pre code {
+        font-size: inherit;
     }
 
     .prose table {

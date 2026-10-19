@@ -52,10 +52,11 @@ export default function Page() {
                 >
                     <article className="mb-4">
                         <h3 className="group-hover:text-[hsl(var(--accent))] transition-colors">
-                           CUTS: Chained Uniform-sum Tree Signatures
+                            CUTS: Chained Uniform-sum Tree Signatures
                         </h3>
                         <p>
-                          A few-time hash-based signature scheme with compact signatures and proven bounds on security after key reuse.
+                            A few-time hash-based signature scheme with compact signatures and
+                            proven bounds on security after key reuse.
                         </p>
                     </article>
                 </Link>
