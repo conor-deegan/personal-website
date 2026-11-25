@@ -16,7 +16,9 @@
                 { type: 'viz-resize', height: Math.ceil(root.getBoundingClientRect().height) },
                 '*',
             );
-        } catch (e) {}
+        } catch {
+            // parent may be cross-origin or gone; ignore
+        }
     }
 
     report();

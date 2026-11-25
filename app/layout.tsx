@@ -3,7 +3,7 @@ import { Analytics } from '@vercel/analytics/react';
 import { baseUrl } from './sitemap';
 import Footer from './components/footer';
 import { themeInitScript } from './components/theme-switcher';
-import { Literata, JetBrains_Mono } from 'next/font/google';
+import { JetBrains_Mono, Literata } from 'next/font/google';
 import type { Metadata } from 'next';
 // import { Navbar } from './components/nav';
 import { SpeedInsights } from '@vercel/speed-insights/next';
