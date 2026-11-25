@@ -3,6 +3,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { MDXRemote, MDXRemoteProps } from 'next-mdx-remote/rsc';
 import React from 'react';
+import remarkGfm from 'remark-gfm';
 import { Viz } from './viz-embed';
 
 function Table({ data }: { data: { headers: string[]; rows: string[][] } }) {
@@ -131,6 +132,13 @@ export function CustomMDX(props: MDXRemoteProps) {
         <MDXRemote
             source={props.source}
             components={{ ...components, ...(props.components || {}) }}
+            options={{
+                ...props.options,
+                mdxOptions: {
+                    ...props.options?.mdxOptions,
+                    remarkPlugins: [remarkGfm, ...(props.options?.mdxOptions?.remarkPlugins || [])],
+                },
+            }}
         />
     );
 }
