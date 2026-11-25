@@ -6,9 +6,17 @@ import React from 'react';
 import remarkGfm from 'remark-gfm';
 import { Viz } from './viz-embed';
 
+function ScrollTable(props: React.ComponentProps<'table'>) {
+    return (
+        <div className="table-wrapper">
+            <table {...props} />
+        </div>
+    );
+}
+
 function Table({ data }: { data: { headers: string[]; rows: string[][] } }) {
     return (
-        <table>
+        <ScrollTable>
             <thead>
                 <tr>
                     {data.headers.map((header, i) => (
@@ -25,7 +33,7 @@ function Table({ data }: { data: { headers: string[]; rows: string[][] } }) {
                     </tr>
                 ))}
             </tbody>
-        </table>
+        </ScrollTable>
     );
 }
 
@@ -123,6 +131,7 @@ const components = {
     a: CustomLink,
     code: Code,
     pre: Pre,
+    table: ScrollTable,
     Table: Table,
     Viz: Viz,
 };

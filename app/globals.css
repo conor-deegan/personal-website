@@ -279,10 +279,16 @@
         font-size: inherit;
     }
 
+    .prose .table-wrapper {
+        max-width: 100%;
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+        margin: 1.5em 0;
+    }
+
     .prose table {
         width: 100%;
         border-collapse: collapse;
-        margin: 1.5em 0;
         font-size: 0.9rem;
     }
 
@@ -291,6 +297,7 @@
         padding: 0.75em 1em;
         border: 1px solid hsl(var(--border));
         text-align: left;
+        white-space: nowrap;
     }
 
     .prose th {
